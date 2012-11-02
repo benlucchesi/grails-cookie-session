@@ -114,10 +114,11 @@ To enable large sessions, you'll need to increase the max http header size of th
 When developing in grails, you can configure the embedded tomcat instance with the tomcat startup event.
 <ol>
 <li>create the file scripts/_Events.groovy in your project directory</li>
-<li>Add the following code:
-    eventConfigureTomcat = {tomcat ->
-      tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
-    }
+<li>
+Add the following code:
+        eventConfigureTomcat = {tomcat ->
+          tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
+        }
 </li>
 </ol>
 
@@ -129,8 +130,8 @@ how to explicitly name the hibernate session factory.
 <ol>
 <li>create the hibernate.cfg.xml file: grails create-hibernate-cfg-xml</li>
 <li>
-  edit the grails-app/conf/hibernate/hibernate.cfg.xml file and add the following line under the &lt;session-factory&gt; element
-    &lt;property name="hibernate.session_factory_name"&gt;session_factory&lt;/property&gt;
+edit the grails-app/conf/hibernate/hibernate.cfg.xml file and add the following line under the &lt;session-factory&gt; element
+        &lt;property name="hibernate.session_factory_name"&gt;session_factory&lt;/property&gt;
 </li>
 </ol>
 
