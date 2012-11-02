@@ -114,9 +114,9 @@ When developing in grails, you can configure the embedded tomcat instance with t
 1.  create the file scripts/_Events.groovy in your project directory
 2.  add the following code:
 
-    eventConfigureTomcat = {tomcat ->
-      tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
-    }
+        eventConfigureTomcat = {tomcat ->
+          tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
+        }
 
 If you're using a container other than tomcat, refer product documentation to figure out what the maximum http header size is and how to increase it.
 
