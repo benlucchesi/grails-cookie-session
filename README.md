@@ -47,7 +47,7 @@ grails install-plugin cookie-session-v2
   <thead>
     <tr>
       <th>name</th>
-      <th>default</th>
+      <th width="25%">default</th>
       <th>description</th>
   </thead>
   <tbody>
@@ -84,7 +84,7 @@ grails install-plugin cookie-session-v2
     <tr>
       <td>grails.plugin.cookiesession.sessiontimeout</td>
       <td>0</td>
-      <td>The length of time a session can be inactive for expressed in seconds. A value of zero indicates that a session will be active for as long as the browser is open.</td>
+      <td>The length of time a session can be inactive for expressed in seconds. Zero indicates that a session will be active for as long as the browser is open.</td>
     </tr>
     <tr>
       <td>grails.plugin.cookiesession.cookiename</td>
