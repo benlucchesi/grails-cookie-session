@@ -97,7 +97,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       cookieName = ch.config.grails.plugin.cookiesession.cookiename
       log.info "grails.plugin.cookiesession.cookiename set: \'${cookieName}\'"
     }else{
-      cookieName = "grails_session" 
+      cookieName = "gsession" 
       log.info "grails.plugin.cookiesession.cookiename not set. defaulting to \'${cookieName}\'"
     }
 
@@ -115,7 +115,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.info "grails.plugin.cookiesession.cookiecount set: ${cookieCount}"
     }
     else{
-      cookieCount = 3
+      cookieCount = 5
       log.info "grails.plugin.cookiesession.cookiecount not set. defaulting to ${cookieCount}"
     }
 
