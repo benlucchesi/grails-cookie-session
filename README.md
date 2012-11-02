@@ -127,11 +127,11 @@ how to explicitly name the hibernate session factory.
 1.  create the hibernate.cfg.xml file: grails create-hibernate-cfg-xml
 2.  edit the grails-app/conf/hibernate/hibernate.cfg.xml file and the hibernate.session_factory_name property under the session-factory element
 
-    <hibernate-configuration>
-      <session-factory>
-        <property name="hibernate.session_factory_name">session_factory</property>
-      </session-factory>
-    </hibernate-configuration>
+        <hibernate-configuration>
+          <session-factory>
+            <property name="hibernate.session_factory_name">session_factory</property>
+          </session-factory>
+        </hibernate-configuration>
 
 ## Logging
 
