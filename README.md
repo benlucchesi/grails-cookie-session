@@ -47,7 +47,7 @@ grails install-plugin cookie-session-v2
   <thead>
     <tr>
       <th>name</th>
-      <th width="25%">default</th>
+      <th>default</th>
       <th>description</th>
   </thead>
   <tbody>
@@ -68,7 +68,7 @@ grails install-plugin cookie-session-v2
     </tr>
     <tr>
       <td>grails.plugin.cookiesession.secret</td>
-      <td>randomly generated at runtime</td>
+      <td><b>generated</b></td>
       <td>The secret key used to encrypt session data. If not set, a random key will be created at runtime. NOTE: if multiple instances of the application are seriving requests, this parameter must be set manually so that all instances can decrypt sessions produced by any instance of the application.</td>
     </tr>
     <tr>
