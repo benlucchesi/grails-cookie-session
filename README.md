@@ -99,14 +99,14 @@ grails install-plugin cookie-session-v2
 
 Config.groovy
 
-  grails.plugin.cookiesession.enabled = true
-  grails.plugin.cookiesession.encryptcookie = true
-  grails.plugin.cookiesession.cryptoalgorithm = "Blowfish"
-  grails.plugin.cookiesession.secret = "This is my secret. There are many like it, but this one is mine.".bytes
-  grails.plugin.cookiesession.cookiecount = 10
-  grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
-  grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
-  grails.plugin.cookiesession.cookiename = 'gsession'
+    grails.plugin.cookiesession.enabled = true
+    grails.plugin.cookiesession.encryptcookie = true
+    grails.plugin.cookiesession.cryptoalgorithm = "Blowfish"
+    grails.plugin.cookiesession.secret = "This is my secret. There are many like it, but this one is mine.".bytes
+    grails.plugin.cookiesession.cookiecount = 10
+    grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
+    grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
+    grails.plugin.cookiesession.cookiename = 'gsession'
 
 ### Enabling large session
 To enable large sessions, you'll need to increase the max http header size of the tomcat connector. In tomcat, this can be configured in the server.xml with the maxHttpHeaderSize. Set this value to something large such as 262144 (i.e. 256kb). 
