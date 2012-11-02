@@ -110,8 +110,8 @@ Config.groovy
 To enable large sessions, you'll need to increase the max http header size of the tomcat connector. In tomcat, this can be configured in the server.xml with the maxHttpHeaderSize. Set this value to something large such as 262144 (i.e. 256kb). 
 
 When developing in grails, you can configure the embedded tomcat instance with the tomcat startup event.
-1. create the file scripts/_Events.groovy in your project directory
-2. Add the following code:
+1.  create the file scripts/_Events.groovy in your project directory
+2.  add the following code:
 
     eventConfigureTomcat = {tomcat ->
       tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
@@ -122,8 +122,8 @@ If you're using a container other than tomcat, refer product documentation to fi
 ### Enabling webflow hibernate session
 In order for webflows attached to hibernate sessions to be correctly deserialized, some additional configuration is needed. The following instructions show
 how to explicitly name the hibernate session factory.  
-1. create the hibernate.cfg.xml file: grails create-hibernate-cfg-xml
-2. edit the grails-app/conf/hibernate/hibernate.cfg.xml file and the hibernate.session_factory_name property under the session-factory element
+1.  create the hibernate.cfg.xml file: grails create-hibernate-cfg-xml
+2.  edit the grails-app/conf/hibernate/hibernate.cfg.xml file and the hibernate.session_factory_name property under the session-factory element
 
     <hibernate-configuration>
       <session-factory>
