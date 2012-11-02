@@ -95,22 +95,26 @@ grails install-plugin cookie-session-v2
 </table>
 
 ### Enabling large session
-To enable large sessions, you'll need to increase the max http header size of the connector. In tomcat, this can be configured in the server.xml with the maxHttpHeaderSize. Set this value to something large such as 262144 (i.e. 256kb). 
+To enable large sessions, you'll need to increase the max http header size of the tomcat connector. In tomcat, this can be configured in the server.xml with the maxHttpHeaderSize. Set this value to something large such as 262144 (i.e. 256kb). 
 
 When developing in grails, you can configure the embedded tomcat instance with the tomcat startup event.
 <ol>
   <li>create the file scripts/_Events.groovy in your project directory</li>
   <li>Add the following code:
     <code>
+    "
       eventConfigureTomcat = {tomcat ->
         tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
       }
+    "
     </code>
   </li>
 </ol>
 
+If you're using a container other than tomcat, refer product documentation to figure out what the maximum http header size is and how to increase it.
+
 ### Enabling webflow hibernate session
-To enable webflows to correctly serialize and deserialize hibernate sessions, some additional configuration is needed. The following instructions show
+In order for webflows attached to hibernate sessions to be correctly deserialized, some additional configuration is needed. The following instructions show
 how to explicitly name the hibernate session factory.  
 <ol>
   <li>create the hibernate.cfg.xml file: grails create-hibernate-cfg-xml</li>
@@ -126,12 +130,14 @@ how to explicitly name the hibernate session factory.
 
 ## Example
 <code>
-grails.plugin.cookiesession.enabled = true <br>
-grails.plugin.cookiesession.encryptcookie = true <br>
-grails.plugin.cookiesession.cryptoalgorithm = "Blowfish" <br>
-grails.plugin.cookiesession.secret = "This is my secret. There are many like it, but this one is mine.".bytes <br>
-grails.plugin.cookiesession.cookiecount = 10 <br>
-grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb <br>
-grails.plugin.cookiesession.sessiontimeout = 3600 // one hour<br>
-grails.plugin.cookiesession.cookiename = 'gsession' <br>
+"
+  grails.plugin.cookiesession.enabled = true
+  grails.plugin.cookiesession.encryptcookie = true
+  grails.plugin.cookiesession.cryptoalgorithm = "Blowfish"
+  grails.plugin.cookiesession.secret = "This is my secret. There are many like it, but this one is mine.".bytes
+  grails.plugin.cookiesession.cookiecount = 10
+  grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
+  grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
+  grails.plugin.cookiesession.cookiename = 'gsession'
+"
 </code>
