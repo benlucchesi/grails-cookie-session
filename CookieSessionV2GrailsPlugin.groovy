@@ -45,8 +45,6 @@ class CookieSessionV2GrailsPlugin {
                 'url-pattern'('/*')
             }
         }
-
-        println xml
     }
 
     def doWithSpring = {
