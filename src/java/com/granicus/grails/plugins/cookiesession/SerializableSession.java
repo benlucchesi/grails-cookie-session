@@ -111,7 +111,6 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public Enumeration getAttributeNames(){
-        System.out.println("getAttributeNames()");
         final Iterator<String> keys = attributes.keySet().iterator();
         final Enumeration names = new Enumeration(){
           public boolean hasMoreElements(){ return keys.hasNext();  }
@@ -150,5 +149,18 @@ public class SerializableSession implements HttpSession, Serializable {
       }
       public boolean isNew(){
         return ( this.newSession );
+      }
+
+      @Override
+      public String toString(){
+        StringBuilder result = new StringBuilder();
+
+        result.append( this.getClass().getName() );
+        result.append( "Object {" );
+        result.append( "  creationTime: " ); result.append( creationTime );
+        result.append( "  lastAccessedTime: "); result.append( lastAccessedTime );
+        result.append( "  attributes: "); result.append( attributes.toString() );
+        result.append( "}" ); 
+        return result.toString();
       }
     }

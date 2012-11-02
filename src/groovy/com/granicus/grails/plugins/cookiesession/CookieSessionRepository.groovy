@@ -163,7 +163,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     def lastAccessedTime = session?.lastAccessedTime?:0
     long inactiveInterval = currentTime - lastAccessedTime 
 
-    if( session && maxInactiveInterval == 0 ){
+    if( session && (maxInactiveInterval == 0 || inactiveInterval <= maxInactiveInterval) ){
       log.info "retrieved valid session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}"
       session.isNewSession = false
       session.lastAccessedTime = System.currentTimeMillis()
