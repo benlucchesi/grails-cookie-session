@@ -18,7 +18,7 @@ architecture is that applications can be upgraded without dropping clients sessi
 ## Relationship to grails-cookie-session plugin
 This project started as a fix to the grails-cookie-session plugin. However after
 sorting through architectural issues and attempting to fix the code so that it supported my use-cases, the
-project because a complete rewrite. With that said, this project would not have been possible (or at least would have
+project became a complete rewrite. With that said, this project would not have been possible (or at least would have
 taken much longer!) had it not been for the original work. Many thanks to Masatoshi Hayashi
 for giving me a place to start.
 
@@ -107,7 +107,7 @@ When developing in grails, you can configure the embedded tomcat instance with t
       }
     </code>
   </li>
-<ol>
+</ol>
 
 ### Enabling webflow hibernate session
 To enable webflows to correctly serialize and deserialize hibernate sessions, some additional configuration is needed. The following instructions show
@@ -120,18 +120,18 @@ how to explicitly name the hibernate session factory.
       &lt;property name="hibernate.session_factory_name"&gt;session_factory&lt;/property&gt;
     </code>
   </li>
+</ol>
 
 ## Logging
 
-## Parameters
-
 ## Example
-
-grails.plugin.cookiesession.enabled = true
-grails.plugin.cookiesession.encryptcookie = true
-grails.plugin.cookiesession.cryptoalgorithm = "Blowfish" // DESEde,DES,AES,Blowfish
-grails.plugin.cookiesession.secret = "This is my secret. There are many like it, but this one is mine.".bytes
-grails.plugin.cookiesession.cookiecount = 10
-grails.plugin.cookiesession.maxcookiesize = 3072
-grails.plugin.cookiesession.sessiontimeout = 120
-grails.plugin.cookiesession.cookiename = 'benlucchesi'
+<code>
+grails.plugin.cookiesession.enabled = true <br>
+grails.plugin.cookiesession.encryptcookie = true <br>
+grails.plugin.cookiesession.cryptoalgorithm = "Blowfish" <br>
+grails.plugin.cookiesession.secret = "This is my secret. There are many like it, but this one is mine.".bytes <br>
+grails.plugin.cookiesession.cookiecount = 10 <br>
+grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb <br>
+grails.plugin.cookiesession.sessiontimeout = 3600 // one hour<br>
+grails.plugin.cookiesession.cookiename = 'gsession' <br>
+</code>
