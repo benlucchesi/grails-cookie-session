@@ -150,17 +150,4 @@ public class SerializableSession implements HttpSession, Serializable {
       public boolean isNew(){
         return ( this.newSession );
       }
-
-      @Override
-      public String toString(){
-        StringBuilder result = new StringBuilder();
-
-        result.append( this.getClass().getName() );
-        result.append( "Object {" );
-        result.append( "  creationTime: " ); result.append( creationTime );
-        result.append( "  lastAccessedTime: "); result.append( lastAccessedTime );
-        result.append( "  attributes: "); result.append( attributes.toString() );
-        result.append( "}" ); 
-        return result.toString();
-      }
-    }
+}
