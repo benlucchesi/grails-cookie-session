@@ -31,7 +31,7 @@ taken much longer!) had it not been for the original work. Many thanks to Masato
 for giving me a place to start.
 
 ## Why Cookie Session V2?
-The original cookie-session plugin is functional, but does not support the full breadth of use-cases found in a modern grails application. The following use-cases are not possible with the other version of the cookie-session plugin, but are fully supported by cookie-session-v2:
+The original cookie-session plugin is functional, but does not support the full breadth of use-cases found in modern grails applications. The following use-cases are not possible with the cookie-session plugin, but are fully supported by cookie-session-v2:
 
 + Flash scope
   
