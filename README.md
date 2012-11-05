@@ -63,8 +63,9 @@ grails install-plugin cookie-session-v2
   none reported
 
 # Configuration
+The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
 
-## Parameter
+## Parameters
 <table>
   <thead>
     <tr>
@@ -129,7 +130,7 @@ Config.groovy
     grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
     grails.plugin.cookiesession.cookiename = 'gsession'
 
-### Enabling large session
+## Enabling large session
 To enable large sessions, you'll need to increase the max http header size of the tomcat connector. In tomcat, this can be configured in the server.xml with the maxHttpHeaderSize. Set this value to something large such as 262144 (i.e. 256kb). 
 
 When developing in grails, you can configure the embedded tomcat instance with the tomcat startup event.
@@ -143,7 +144,7 @@ When developing in grails, you can configure the embedded tomcat instance with t
 
 If you're using a container other than tomcat, refer product documentation to figure out what the maximum http header size is and how to increase it.
 
-### Enabling webflow hibernate session
+## Enabling webflow hibernate session
 In order for webflows attached to hibernate sessions to be correctly deserialized, some additional configuration is needed. The following instructions show
 how to explicitly name the hibernate session factory.  
 
