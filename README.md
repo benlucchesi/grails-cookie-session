@@ -5,7 +5,7 @@ in cookies, a complete record of a client's state is transmitted with each reque
 on the server. There are many benifits to this approach to managing clients' sessions.
 
 
-*     Simplified Scaling
+* Simplified Scaling
 
       Because a client's session is passed with every request, you no longer need be concerned with complicated inefficient
       scaling strategies that compensate for the physical location of where the session is stored. Simply add application 
@@ -13,7 +13,7 @@ on the server. There are many benifits to this approach to managing clients' ses
       the session data is stored by the client, the server doesn't waste memory or disk space for sessions that are open
       for long periods of time.
 
-*     Fault Tolerance
+* Fault Tolerance
     
       By default, grails sessions are stored in server-side memory. If you application crashes or becomes inaccessible,
       clients' session are typically lost or becomes out of sync between application instances. This can result in unexpected
