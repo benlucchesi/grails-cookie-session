@@ -1,58 +1,43 @@
 # Cookie Session V2 Grails Plugin
 
-The Cookie Session V2 plugin allows grails applications to store session data in cookies. By storing session data
-in cookies, a complete record of a client's state is transmitted with each request from client to server and reconstituted
-on the server. There are many benifits to this approach to managing clients' sessions.
-
+The Cookie Session V2 plugin enables grails applications to store session data in http cookies between requests. 
+As a result, the client's session is transmitted with each request from the browser to the server. Benefits of 
+this session management strategy inlucde: 
 
 * Simplified Scaling
 
-      Because a client's session is passed with every request, you no longer need be concerned with complicated inefficient
-      scaling strategies that compensate for the physical location of where the session is stored. Simply add application 
-      instances and route requests to them. No more session replication or sticky sessions needed. In addition, because
-      the session data is stored by the client, the server doesn't waste memory or disk space for sessions that are open
-      for long periods of time.
+      Because a client's session is passed with every request, the deployment architecture need not be concerned 
+      with complicated and inefficient scaling strategies that need to account for sessions stored on the server. 
+      Simply add application instances and route requests to them; no need for session replication or sticky 
+      sessions. Also, because the session data is stored by the client, the server doesn't waste 
+      memory or disk space on sessions that are open for long periods of time.
 
 * Fault Tolerance
     
-      By default, grails sessions are stored in server-side memory. If you application crashes or becomes inaccessible,
-      clients' session are typically lost or becomes out of sync between application instances. This can result in unexpected
-      logouts, redirects, and loss of data, i.e. poor user experience. By using cookie sessions the application is much 
-      less brittle. In a single instance deployment scenario, the server or application can be recycled 
-      and clients can continue working with their sessions fully intact. In a multiple instance deployment scenario,
-      any instance of the applicatin can service the next request.
+      By default grails sessions are stored in memory on the server. If the application crashes or becomes inaccessible,
+      the clients' session is usually lost which can result in unexpected logouts, redirects, or loss of data, i.e. poor 
+      user experience. When the session is stored in a cookie, the user experience isn't disrupted by commission 
+      failures in the server. In a single instance deployment scenario, the server or application can be recycled 
+      and clients can continue working when the application becomes available with their session fully intact. In a 
+      multi-instance deployment scenario, any instance of the applicatin can service a clients request. A benificial 
+      side effect is that applications can be upgraded or restarted (within reason) without logging out users.
 
 
 ## Relationship to grails-cookie-session plugin
 This project started as a fix to the grails-cookie-session plugin. However after
-sorting through architectural issues and attempting to fix the code so that it supported my use-cases, the
+sorting through architectural issues and attempting to fix the code so that it supported use-cases in our application, the
 project became a complete rewrite. With that said, this project would not have been possible (or at least would have
-taken much longer!) had it not been for the original work. Many thanks to Masatoshi Hayashi
-for giving me a place to start.
+taken much longer!) had it not been for the original work. Many thanks to Masatoshi Hayashi for giving me a place to start.
 
-## Why Cookie Session V2?
-The original cookie-session plugin is functional, but does not support the full breadth of use-cases found in modern grails applications. The following use-cases are not possible with the cookie-session plugin, but are fully supported by cookie-session-v2:
+## Important Features Supported by Cookie Session V2 (not supported by the original cookie-session)
 
-+ Flash scope
++ compatible with flash scope
+
++ compatible with webflow
   
-  The Cookie-session plugin disregarded the flash scope between requests. Cookie-session-v2 preserves the flash scope between requests
-  so that flash scoped variables are available on subsequent requests.
-
-+ webflow
-  
-  The cookie-session plugin is not compatible with webflow. States were lost between requests. Cookie-session-v2 fully supports
-  webflow state transitions and database access between requests to multiple application instances.
-
-+ Secure session
-
-  The cookie-session plugin compresses and signs sessions which prevents tampering, but the data can still be inspected 
-  and ready by clients. Cookie-session-v2 encrypts the session data which prevents both tampering and inspection. 
++ supports secure sessions
  
-+ Sessions larger than 4kb
-  
-  The cookie-session plugin not support session larger than 4kb, compressed, i.e. the max size of a cookie. Cookie-session-v2
-  can store compressed sessions that approach the limit of the max-header size supported by the application server.
-
++ supports sessions larger than 4kb
 
 # Installation
 
@@ -130,10 +115,13 @@ Config.groovy
     grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
     grails.plugin.cookiesession.cookiename = 'gsession'
 
-## Enabling large session
-To enable large sessions, you'll need to increase the max http header size of the tomcat connector. In tomcat, this can be configured in the server.xml with the maxHttpHeaderSize. Set this value to something large such as 262144 (i.e. 256kb). 
+## Understanding cookiecount and maxcookiesize
+The maximum session size stored by this plugin is calculated by (cookiecount * maxcookiesize). The reason for these two parameters is that through experimentation, some browsers didn't reliably set large cookies set before the subsequent request. To solve this issue, this plugin supports configuring the max size of each cookie stored and the number of cookies to span the session over. The default values are conservative. If sessions in your application meet or exceed the max session size as configured, first increase the cookiecount and then the maxcookiesize parameters.
 
-When developing in grails, you can configure the embedded tomcat instance with the tomcat startup event.
+## Enabling large session
+To enable large sessions, you'll need to increase the max http header size of the tomcat http connector. In tomcat this can be configured in the server.xml with the maxHttpHeaderSize parameter. Set the parameter to something large, such as 262144 ( 256kb ). 
+
+When developing in grails, you can configure the embedded tomcat instance with the tomcat startup event:
 
 1.  create the file scripts/_Events.groovy in your project directory
 2.  add the following code:
@@ -142,11 +130,13 @@ When developing in grails, you can configure the embedded tomcat instance with t
           tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
         }
 
-If you're using a container other than tomcat, refer product documentation to figure out what the maximum http header size is and how to increase it.
+If you're using a container other than tomcat, refer to the documentation to figure out how to configure the maximum http header size.
 
-## Enabling webflow hibernate session
-In order for webflows attached to hibernate sessions to be correctly deserialized, some additional configuration is needed. The following instructions show
-how to explicitly name the hibernate session factory.  
+These configuration changes are needed because by default the max http header in tomcat is 8kb which is far to small
+for storing a serialized session.
+
+## Enabling Webflow Support
+In order for cookie-session-v2 to work with webflows correctly, additional hibernate configuration is needed.
 
 1.  create the hibernate.cfg.xml file: grails create-hibernate-cfg-xml
 2.  edit the grails-app/conf/hibernate/hibernate.cfg.xml file and the hibernate.session_factory_name property under the session-factory element
@@ -156,6 +146,14 @@ how to explicitly name the hibernate session factory.
             <property name="hibernate.session_factory_name">session_factory</property>
           </session-factory>
         </hibernate-configuration>
+
+These configuration changes are needed to support deserializing a webflow conversation container by an
+application instance other than the one that serialized the conversation container. The conversation container contains an object
+that references the hibernate session factory. By default, the hibernate session factory is assigned a name at runtime. 
+This causes deserialization of the conversation container to fail because a session factory with the same name 
+when it was serialized isn't present. This scenario occurs when the conversation container is deserialized 
+by an instance of of the application other than the one where the conversation container originated. The solution is to explicitly 
+name the session factory so that an object with the same name is always available during deserialization.
 
 ## Logging
 

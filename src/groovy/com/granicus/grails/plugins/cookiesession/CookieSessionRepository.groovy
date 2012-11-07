@@ -54,8 +54,8 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   String cryptoAlgorithm = "Blowfish"
   def cryptoSecret = null
   long maxInactiveInterval = 60 * 60
-  int cookieCount = 8
-  int maxCookieSize = 2000
+  int cookieCount = 5
+  int maxCookieSize = 2048
 
   void afterPropertiesSet(){
 
