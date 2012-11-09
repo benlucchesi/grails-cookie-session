@@ -22,6 +22,8 @@ package com.granicus.grails.plugins.cookiesession;
 import javax.servlet.http.HttpSession;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSessionContext;
+import javax.servlet.http.HttpSessionBindingListener;
+import javax.servlet.http.HttpSessionBindingEvent;
 
 import java.io.Serializable;
 import java.util.Enumeration;
@@ -29,7 +31,11 @@ import java.util.Iterator;
 
 import java.util.HashMap;
 
+import org.apache.log4j.Logger;
+
 public class SerializableSession implements HttpSession, Serializable {
+
+      final static Logger log = Logger.getLogger(SerializableSession.class.getName());
 
       // borrowed from other cookie session plugin to fake a session context
       @SuppressWarnings("deprecation") /* ServletAPI */
@@ -56,6 +62,7 @@ public class SerializableSession implements HttpSession, Serializable {
       private long lastAccessedTime = 0;
       private HashMap<String,Serializable> attributes;
 
+      private Boolean isValid = true; 
       transient private ServletContext servletContext;
       transient private boolean newSession;
       transient private int maxInactiveInterval;
@@ -67,6 +74,7 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public long getCreationTime(){
+        //assertValid();
         return ( creationTime );
       }
 
@@ -79,6 +87,7 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public long getLastAccessedTime(){
+        //assertValid();
         return ( lastAccessedTime );
       }
 
@@ -103,14 +112,17 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public Object getAttribute(String name){
+        //assertValid();
         return ( attributes.get(name) );
       }
 
       public Object getValue(String name){
+        //assertValid();
         return getAttribute(name);
       }
 
       public Enumeration getAttributeNames(){
+        //assertValid();
         final Iterator<String> keys = attributes.keySet().iterator();
         final Enumeration names = new Enumeration(){
           public boolean hasMoreElements(){ return keys.hasNext();  }
@@ -121,33 +133,61 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public String[] getValueNames(){
+        //assertValid();
         return ( attributes.keySet().toArray( new String[0] ) );
       }
 
       public void setAttribute(String name, Object value){
-          attributes.put(name,(Serializable)value);
+        //assertValid();
+        attributes.put(name,(Serializable)value);
+        if( value != null && value instanceof HttpSessionBindingListener ){
+          try{
+            ((HttpSessionBindingListener)value).valueBound(new HttpSessionBindingEvent(this,name));
+          }
+          catch( Exception excp ){
+            log.error(excp);
+          }
+        }
       }
 
       public void putValue(String name, Object value){
-          attributes.put(name,(Serializable)value);
+        this.setAttribute(name,value);
       }
 
       public void removeAttribute(String name){
-          attributes.remove(name);
+        //assertValid();
+        Object value = attributes.remove(name);
+        if( value != null && value instanceof HttpSessionBindingListener ){
+          try{
+            ((HttpSessionBindingListener)value).valueUnbound( new HttpSessionBindingEvent(this,name));
+          }
+          catch( Exception excp ){
+            log.error(excp);
+          }
+        }
       }
 
       public void removeValue(String name){
-          attributes.remove(name);
+        //assertValid();
+        this.removeAttribute(name);
       }
 
       public void invalidate(){
-        //TODO: store flag indicating that session is invalid
+        isValid = false;
       }
 
       protected void setIsNewSession( boolean isNewSession ){
         this.newSession = isNewSession;
       }
       public boolean isNew(){
+        //assertValid();
         return ( this.newSession );
       }
+
+    /*
+      protected void assertValid(){
+        if( !isValid )
+          throw new IllegalStateException();
+      }
+    */
 }

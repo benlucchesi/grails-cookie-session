@@ -163,7 +163,11 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     def lastAccessedTime = session?.lastAccessedTime?:0
     long inactiveInterval = currentTime - lastAccessedTime 
 
-    if( session && (maxInactiveInterval == 0 || inactiveInterval <= maxInactiveInterval) ){
+    if( session && session.isValid == false ){
+      log.info "retrieved invalidated session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}.";
+      session = null
+    }
+    else if( session && (maxInactiveInterval == 0 || inactiveInterval <= maxInactiveInterval) ){
       log.info "retrieved valid session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}"
       session.isNewSession = false
       session.lastAccessedTime = System.currentTimeMillis()
@@ -184,7 +188,10 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     log.trace "saveSession()"
 
     String serializedSession = serializeSession(session) 
-    putDataInCookie(response, serializedSession );
+    if( session.isValid )
+      putDataInCookie(response, serializedSession )
+    else
+      deleteCookie(response)
   }
 
   String serializeSession( SerializableSession session ){
@@ -275,7 +282,6 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     def partitions = input.size() / maxCookieSize 
     log.trace "splitting input of size ${input.size()} string into ${partitions} paritions"
 
-    //for( int i = 0; i < partitions; i++ ){
     (0..partitions).each{ i ->
       def start = i * maxCookieSize;
       def end = start + maxCookieSize - 1
@@ -314,6 +320,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       Cookie c = new Cookie( "${cookieName}-${i}".toString(), it?:'')
       c.setSecure(false)
       c.setPath("/")
+      //TODO: set the timeout for the cookie
       response.addCookie(c)
       log.trace "added ${cookieName}-${i} to response"
    }
@@ -323,10 +330,14 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
 
   void deleteCookie(HttpServletResponse response){
     log.trace "deleteCookie()"
-     Cookie c = new Cookie( cookieName, "" )
-     c.path = "/"
-     c.maxAge = 0
-     c.setVersion( 0 )
+    (0..cookieCount).eachWithIndex{ it, i ->
+      Cookie c = new Cookie( "${cookieName}-${i}".toString(), '')
+      c.setSecure(false)
+      c.setPath("/")
+      c.maxAge = 0
+      response.addCookie(c)
+      log.trace "added ${cookieName}-${i} to response with maxAge == 0"
+   }
   }
 
   boolean isSessionIdValid(String sessionId){
