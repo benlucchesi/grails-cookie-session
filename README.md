@@ -72,7 +72,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     <tr>
       <td>grails.plugin.cookiesession.cryptoalgorithm</td>
       <td>Blowfish</td>
-      <td>The cryptographic algorithm used to encrypt session data (i.e. Blowfish, DES, DESEde, AES). NOTE: your secret must be compatible with the crypto algorithm.</td>
+      <td>The cryptographic algorithm used to encrypt session data (i.e. Blowfish, DES, DESEde, AES). NOTE: the secret must be compatible with the crypto algorithm.</td>
     </tr>
     <tr>
       <td>grails.plugin.cookiesession.secret</td>

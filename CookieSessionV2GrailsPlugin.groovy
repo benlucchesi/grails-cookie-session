@@ -5,9 +5,9 @@ import com.granicus.grails.plugins.cookiesession.CookieSessionRepository
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean
 
 class CookieSessionV2GrailsPlugin {
-    def version = "0.1"
+    def version = "2.0.0"
     def grailsVersion = "2.1.0 > *"
-    def title = "Cookie Session V2" // Headline display name of the plugin
+    def title = "Cookie Session V2 Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
     def authorEmail = "benlucchesi@gmail.com"
     def description = "The Cookie Session V2 plugin stores the session data in cookies to support the development of stateless web applications. This implementation works with flash scope and webflow."
