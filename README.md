@@ -28,7 +28,7 @@ taken much longer!) had it not been for the original work. Many thanks to Masato
 to start. After reviewing this implementation, Masatoshi has agreed to let this version supersede the origin 
 cookie-session plugin.
 
-### Why a major version number increment from (0.1.2 to 2.0.0)? 
+### Why a major version number increment from 0.1.2 to 2.0.0? 
 This is a major upgrade to both functionality and implementation.
 
 ### Upgrading from cookie-session version 0.1.2
