@@ -21,14 +21,11 @@ The Cookie Session plugin enables grails applications to store session data in h
       multi-instance deployment scenario, any instance of the applicatin can service a clients request. A benificial 
       side effect of cookie-sessions is that applications can be upgraded or restarted without logging out users.
 
-## Important Features Supported by Cookie Session V2 (not supported by the original cookie-session)
+## Features new to version 2.0
 
 + compatible with flash scope
-
 + compatible with webflow
-  
 + supports secure sessions
- 
 + supports sessions larger than 4kb
 
 # Installation
