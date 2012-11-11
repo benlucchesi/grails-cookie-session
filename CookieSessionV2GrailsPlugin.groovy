@@ -6,7 +6,7 @@ import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryB
 
 class CookieSessionV2GrailsPlugin {
     def version = "2.0.0"
-    def grailsVersion = "2.0.0 > *"
+    def grailsVersion = "1.2.4 > *"
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
     def authorEmail = "benlucchesi@gmail.com"
