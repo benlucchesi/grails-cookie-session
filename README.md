@@ -184,18 +184,17 @@ The following log4j keys are configurable:
   *   sessionRepository - an implementation of SessionRepository
 
 ## Relationship to grails-cookie-session plugin version 0.1.2 
-This project started as a fix to the grails-cookie-session plugin. However, in the end the project became a 
-complete reimplementation. With that said, this project would not have been possible (or at least would have 
-taken much longer!) had it not been for the original work by Masatoshi. Many thanks to Masatoshi Hayashi for
-giving me a place to start! However, after reviewing this implementation, Masatoshi has agreed to let this 
-version supersede the origin cookie-session plugin and has thus taken over the cookie-session name in the plugin
-repository.
+This project started as a fix to the grails-cookie-session plugin (https://github.com/literalice/grails-cookie-session). 
+However, in the end the project became a complete reimplementation. With that said, I would like to give
+special recognition to Masatoshi Hayashi. This project would not have been possible (or at least would have 
+taken much longer!) had it not been for his original work. Many thanks to Masatoshi Hayashi for giving me a place to start! 
+After reviewing this implementation, Masatoshi has agreed to let this version supersede his version and thus, this 
+project has taken over the 'cookie-session' name in grails the plugin repository.
 
 ### Why a major version number increment from 0.1.2 to 2.0.0? 
-This is a major upgrade to both functionality and implementation. This plugin was originally called cookie-session-v2 
-as it was intended to stand on its own from cookie-session v0.1.2. But when the decision was made to allow it to supersede
-the origin version, the names were changed, and the version was set to 2.0.0 to signify that its the second version of the
-plugin.
+This is a major functionality upgrade. It was also originally called cookie-session-v2 
+and was intended to stand on its own. But when the decision was made to allow it to supersede the origin implementation, 
+the version was set to 2.0.0 to signify that its the second version of the plugin and upgrades the original version.
 
 ### Upgrading from cookie-session version 0.1.2
 This plugin is a drop-in replacement for cookie-session 0.1.2. and will work without as well as the cookie-session 0.1.2.
