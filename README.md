@@ -49,11 +49,7 @@ remove the deprecated configuration settings from your application.
 
 # Installation
 
-grails install-plugin cookie-session-v2
-
-# Issues
-
-  none reported
+grails install-plugin cookie-session
 
 # Configuration
 The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
