@@ -6,11 +6,11 @@ import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryB
 
 class CookieSessionV2GrailsPlugin {
     def version = "2.0.0"
-    def grailsVersion = "2.1.0 > *"
-    def title = "Cookie Session V2 Plugin" // Headline display name of the plugin
+    def grailsVersion = "2.0.0 > *"
+    def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
     def authorEmail = "benlucchesi@gmail.com"
-    def description = "The Cookie Session V2 plugin stores the session data in cookies to support the development of stateless web applications. This implementation works with flash scope and webflow."
+    def description = "The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. This allows application deployments to be more stateless which supports simplified scaling architectures and application fault tolerance." 
     def documentation = "http://github.com/benlucchesi/grails-cookie-session-v2"
     def license = "APACHE"
 
@@ -18,7 +18,6 @@ class CookieSessionV2GrailsPlugin {
     def scm = [url: 'https://github.com/benlucchesi/grails-cookie-session-v2']
 
     def getWebXmlFilterOrder() {
-        // make sure the filter is first
         [cookieSessionFilter: -100]
     }
 
@@ -58,7 +57,7 @@ class CookieSessionV2GrailsPlugin {
         }
 
         cookieSessionFilter(CookieSessionFilter) {
-            sessionRepository = ref("sessionRepository")
+          sessionRepository = ref("sessionRepository")
         }
 
     }

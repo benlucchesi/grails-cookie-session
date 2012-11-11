@@ -53,7 +53,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   boolean encryptCookie = true
   String cryptoAlgorithm = "Blowfish"
   def cryptoSecret = null
-  long maxInactiveInterval = 60 * 60
+  long maxInactiveInterval = 120 * 1000
   int cookieCount = 5
   int maxCookieSize = 2048
 
@@ -83,14 +83,20 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
 
     if( ch.config.grails.plugin.cookiesession.sessiontimeout ){
       maxInactiveInterval = ch.config.grails.plugin.cookiesession.sessiontimeout * 1000
-      if( maxInactiveInterval < 0 ){
-        log.warn "config.grails.plugin.cookiesession.sessiontimeout needs to be greater than or equal to zero. defaulting to 0"
-        maxInactiveInterval = 0
+      if( maxInactiveInterval == -1 ){
+        log.info "config.grails.plugin.cookiesession.sessiontimeout set to -1. sessions will remain active while the user's browser remain open"
       }
-      log.info "grails.plugin.cookiesession.sessiontimeout set: ${maxInactiveInterval} ms."
-    }else{
-      maxInactiveInterval = 0
-      log.info "grails.plugin.cookiesession.sessiontimeout not set. defaulting to ${maxInactiveInterval} ms."
+      else if( maxInactiveInterval > 0 ){
+        log.info "grails.plugin.cookiesession.sessiontimeout set: ${maxInactiveInterval} ms."
+      }
+      else if( maxInactiveInterval <= 0 ){
+        log.warn "config.grails.plugin.cookiesession.sessiontimeout needs to be greater than or equal to zero. defaulting to -1"
+        maxInactiveInterval = -1
+      }
+    }
+    else{
+      maxInactiveInterval = -1
+      log.info "grails.plugin.cookiesession.sessiontimeout not set. defaulting to ${maxInactiveInterval}"
     }
 
     if( ch.config.grails.plugin.cookiesession.cookiename ){
@@ -120,6 +126,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     }
 
     if( ch.config.grails.plugin.cookiesession.maxcookiesize ){
+
       maxCookieSize = ch.config.grails.plugin.cookiesession.maxcookiesize.toInteger()
 
       if( maxCookieSize < 1024 && maxCookieSize > 4096 ){
@@ -138,6 +145,21 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     if( maxCookieSize * cookieCount > 6114 ){
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
     }
+
+    if( ch.config.grails.plugin.cookiesession.id )
+      log.warn "the grails.plugin.cookiesession.id setting is deprecated! Use the grails.plugin.cookiesession.cookiename setting instead!"
+
+    if( ch.config.grails.plugin.cookiesession.timeout )
+      log.warn "the grails.plugin.cookiesession.timeout setting is deprecated! Use the grails.plugin.cookiesession.sessiontimeout setting instead!" 
+
+    if( ch.config.grails.plugin.cookiesession.hmac.secret )
+      log.warn "the grails.plugin.cookiesession.hmac.secret setting is deprecated! Use the grails.plugin.cookiesession.secret setting instead!"
+
+    if( ch.config.grails.plugin.cookiesession.hmac.id )
+      log.warn "the grails.plugin.cookiesession.hmac.id setting is deprecated!"
+
+    if( ch.config.grails.plugin.cookiesession.hmac.algorithm )
+      log.warn "the grails.plugin.cookiesession.hmac.algorithm is deprecated! Use the grails.plugin.cookiesession.cryptoalgorithm setting instead!"
 
     // initialize the crypto key
     cryptoKey = new SecretKeySpec(cryptoSecret,cryptoAlgorithm.split('/')[0])
@@ -163,19 +185,21 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     def lastAccessedTime = session?.lastAccessedTime?:0
     long inactiveInterval = currentTime - lastAccessedTime 
 
-    if( session && session.isValid == false ){
-      log.info "retrieved invalidated session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}.";
-      session = null
-    }
-    else if( session && (maxInactiveInterval == 0 || inactiveInterval <= maxInactiveInterval) ){
-      log.info "retrieved valid session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}"
-      session.isNewSession = false
-      session.lastAccessedTime = System.currentTimeMillis()
-      session.servletContext = request.servletContext
-    }
-    else if( session && inactiveInterval > maxInactiveInterval ){
-      log.info "retrieved expired session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}. expired by ${inactiveInterval} ms.";
-      session = null
+    if( session ){
+      if( session.isValid == false ){
+        log.info "retrieved invalidated session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}.";
+        session = null
+      }
+      else if( maxInactiveInterval == -1 || inactiveInterval <= maxInactiveInterval ){
+        log.info "retrieved valid session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}"
+        session.isNewSession = false
+        session.lastAccessedTime = System.currentTimeMillis()
+        session.servletContext = request.servletContext
+      }
+      else if( inactiveInterval > maxInactiveInterval ){
+        log.info "retrieved expired session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}. expired by ${inactiveInterval} ms.";
+        session = null
+      }
     }
     else{
       log.info "no session retrieved from cookie."
@@ -304,7 +328,9 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   String getDataFromCookie(HttpServletRequest request){
     log.trace "getDataFromCookie()"
 
-    def values = request.cookies.findAll{ it.name.startsWith(cookieName) }?.sort{ it.name.split('-')[1].toInteger() }.collect{ it.value }
+    def values = request.cookies.findAll{ 
+      it.name.startsWith(cookieName) }?.sort{ 
+        it.name.split('-')[1].toInteger() }.collect{ it.value }
    
     def data = combineStrings(values)
     log.debug "retrieved ${data.size()} bytes of data from ${values.size()} session cookies."
@@ -315,12 +341,15 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   void putDataInCookie(HttpServletResponse response, String value){
     log.trace "putDataInCookie() - ${value.size()}"
 
+    // the cookie's maxAge will either be -1 or the number of seconds it should live for
+    def maxAge = maxInactiveInterval == -1 ? maxInactiveInterval : (Integer)(maxInactiveInterval / 1000)
+
     def partitions = splitString(value)
     partitions.eachWithIndex{ it, i ->
       Cookie c = new Cookie( "${cookieName}-${i}".toString(), it?:'')
       c.setSecure(false)
       c.setPath("/")
-      //TODO: set the timeout for the cookie
+      c.maxAge = maxAge
       response.addCookie(c)
       log.trace "added ${cookieName}-${i} to response"
    }

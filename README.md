@@ -1,33 +1,41 @@
-# Cookie Session V2 Grails Plugin
+# Cookie Session Grails Plugin
 
-The Cookie Session V2 plugin enables grails applications to store session data in http cookies between requests. 
-As a result, the client's session is transmitted with each request from the browser to the server. Benefits of 
-this session management strategy inlucde: 
+Current Version: 2.0.0
+
+The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. The client's session is transmitted from mthe browser to the application with each request. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
 * Simplified Scaling
 
       Because a client's session is passed with every request, the deployment architecture need not be concerned 
-      with complicated and inefficient scaling strategies that need to account for sessions stored on the server. 
-      Simply add application instances and route requests to them; no need for session replication or sticky 
-      sessions. Also, because the session data is stored by the client, the server doesn't waste 
-      memory or disk space on sessions that are open for long periods of time.
+      with scaling strategies that account for sessions stored on the server, such as session replication or sticky sessions. 
+      Simply add application instances and route requests to them. Also, because the session data is stored with client, 
+      the server doesn't expend memory or disk space storing sessions that are open for long periods of time.
 
 * Fault Tolerance
     
-      By default grails sessions are stored in memory on the server. If the application crashes or becomes inaccessible,
-      the clients' session is usually lost which can result in unexpected logouts, redirects, or loss of data, i.e. poor 
-      user experience. When the session is stored in a cookie, the user experience isn't disrupted by commission 
-      failures in the server. In a single instance deployment scenario, the server or application can be recycled 
-      and clients can continue working when the application becomes available with their session fully intact. In a 
+      When sessions are stored in memory on the server, if an application crashes or becomes inaccessible,
+      clients' sessions are usually lost which can result in unexpected logouts, redirects, or loss of data. 
+      When sessions are stored cookies,the applications can be much more tolerant to server-side commission failures. 
+      In a single-instance deployment scenario, the server or application can be recycled 
+      and clients can continue working when the application becomes available and with their session fully intact. In a 
       multi-instance deployment scenario, any instance of the applicatin can service a clients request. A benificial 
-      side effect is that applications can be upgraded or restarted (within reason) without logging out users.
-
+      side effect of cookie-sessions is that applications can be upgraded or restarted without logging out users.
 
 ## Relationship to grails-cookie-session plugin
-This project started as a fix to the grails-cookie-session plugin. However after
-sorting through architectural issues and attempting to fix the code so that it supported use-cases in our application, the
-project became a complete rewrite. With that said, this project would not have been possible (or at least would have
-taken much longer!) had it not been for the original work. Many thanks to Masatoshi Hayashi for giving me a place to start.
+This project started as a fix to the grails-cookie-session plugin. However, in the end the project became a 
+complete reimplementation. With that said, this project would not have been possible (or at least would have 
+taken much longer!) had it not been for the original work. Many thanks to Masatoshi Hayashi for giving me a place 
+to start. After reviewing this implementation, Masatoshi has agreed to let this version supersede the origin 
+cookie-session plugin.
+
+### Why a major version number increment from (0.1.2 to 2.0.0)? 
+This is a major upgrade to both functionality and implementation.
+
+## Upgrading from cookie-session version 0.1.2
+This plugin is a drop-in replacement for cookie-session 0.1.2. and will work without as well as the cookie-session 0.1.2.
+However, in order to take advantage of the new features in version 2.0.0, the new configuration settings will need to be used.
+Also, note that some configuration settings have been deprecated and are listed in the configuration settings table below. Please
+remove the deprecated configuration settings from your application.
 
 ## Important Features Supported by Cookie Session V2 (not supported by the original cookie-session)
 
@@ -92,13 +100,39 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     <tr>
       <td>grails.plugin.cookiesession.sessiontimeout</td>
       <td>0</td>
-      <td>The length of time a session can be inactive for expressed in seconds. Zero indicates that a session will be active for as long as the browser is open.</td>
+      <td>The length of time a session can be inactive for expressed in seconds. -1 indicates that a session will be active for as long as the browser is open.</td>
     </tr>
     <tr>
       <td>grails.plugin.cookiesession.cookiename</td>
       <td>gsession-X</td>
       <td>X number of cookies will be written per the cookiecount parameter. Each cookie is suffixed with the integer index of the cookie.</td>
     </tr>
+    <tr>
+      <td>grails.plugin.cookiesession.id</td>
+      <td><b>deprecated</b></td>
+      <td>deprecated. use the 'grails.plugin.cookiesession.cookiename' setting.</td>
+    </tr>
+    <tr>
+      <td>grails.plugin.cookiesession.timeout</td>
+      <td><b>deprecated</b></td>
+      <td>deprecated. use the 'grails.plugin.cookiesession.sessiontimeout' setting.</td>
+    </tr>
+    <tr>
+      <td>grails.plugin.cookiesession.hmac.secret</td>
+      <td><b>deprecated</b></td>
+      <td>deprecated. use the 'grails.plugin.cookiesession.secret' setting.</td>
+    </tr>
+    <tr>
+      <td>grails.plugin.cookiesession.hmac.id</td>
+      <td><b>deprecated</b></td>
+      <td>deprecated. no equivelent setting is present in this version of the plugin.</td>
+    </tr>
+    <tr>
+      <td>grails.plugin.cookiesession.hmac.algorithm  </td>
+      <td><b>deprecated</b></td>
+      <td>deprecated. use the 'grails.plugin.cookiesession.cryptoalgorithm' settings.</td>
+    </tr>
+
   </tbody>
 </table>
 
@@ -196,3 +230,7 @@ Throughout the remainder of the request, the SessionRepositoryRequestWrapper is 
 As the request processing comes to a conclussion the SessionRepositoryResponseWrapper is used to intercept calls that would cause the response to be committed (i.e. written back to the client). When it intercepts these calls, it uses a SessionRepository object to persist the Session object.
 
 The CookieSession object is a spring bean that implements the SessionRepository interface. This object is injected injected into the application so that it can be replaced with alternative implementations that can store the session to different locations such as database, shared in-memory store, shared filesystem, etc.
+
+## automated tests
+automated tests for this plugin are located at:
+github.com/benlucchesi/test-cookie-session-plugin
