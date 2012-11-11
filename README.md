@@ -1,3 +1,4 @@
+
 # Cookie Session Grails Plugin
 
 Current Version: 2.0.0
