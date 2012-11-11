@@ -21,7 +21,7 @@ The Cookie Session plugin enables grails applications to store session data in h
       multi-instance deployment scenario, any instance of the applicatin can service a clients request. A benificial 
       side effect of cookie-sessions is that applications can be upgraded or restarted without logging out users.
 
-## Relationship to grails-cookie-session plugin
+## Relationship to grails-cookie-session plugin version 0.1.2 
 This project started as a fix to the grails-cookie-session plugin. However, in the end the project became a 
 complete reimplementation. With that said, this project would not have been possible (or at least would have 
 taken much longer!) had it not been for the original work. Many thanks to Masatoshi Hayashi for giving me a place 
@@ -31,7 +31,7 @@ cookie-session plugin.
 ### Why a major version number increment from (0.1.2 to 2.0.0)? 
 This is a major upgrade to both functionality and implementation.
 
-## Upgrading from cookie-session version 0.1.2
+### Upgrading from cookie-session version 0.1.2
 This plugin is a drop-in replacement for cookie-session 0.1.2. and will work without as well as the cookie-session 0.1.2.
 However, in order to take advantage of the new features in version 2.0.0, the new configuration settings will need to be used.
 Also, note that some configuration settings have been deprecated and are listed in the configuration settings table below. Please
