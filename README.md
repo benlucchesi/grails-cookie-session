@@ -2,7 +2,7 @@
 
 Current Version: 2.0.0
 
-The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. The client's session is transmitted from mthe browser to the application with each request. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
+The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
 * Simplified Scaling
 

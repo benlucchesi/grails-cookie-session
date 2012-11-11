@@ -10,7 +10,7 @@ class CookieSessionV2GrailsPlugin {
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
     def authorEmail = "benlucchesi@gmail.com"
-    def description = "The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. This allows application deployments to be more stateless which supports simplified scaling architectures and application fault tolerance." 
+    def description = "The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. This allows application deployments to be more stateless which supports simplified scaling architectures and fault tolerance." 
     def documentation = "http://github.com/benlucchesi/grails-cookie-session-v2"
     def license = "APACHE"
 
