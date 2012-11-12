@@ -15,7 +15,7 @@ class CookieSessionGrailsPlugin {
     def license = "APACHE"
 
     // Online location of the plugin's browseable source code.
-    def scm = [url: 'https://github.com/benlucchesi/grails-cookie-session-v2']
+    def scm = [url: 'http://github.com/benlucchesi/grails-cookie-session-v2']
 
     def getWebXmlFilterOrder() {
         [cookieSessionFilter: -100]
