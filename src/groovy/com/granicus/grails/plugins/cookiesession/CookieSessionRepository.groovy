@@ -63,7 +63,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
 
     log.info "configuring CookieSessionRepository"
    
-    if( ch.config.grails.plugin.cookiesession.encryptcookie != null ){
+    if( ch.config.grails.plugin.cookiesession.containsKey('encryptcookie') ){
       encryptCookie = ch.config.grails.plugin.cookiesession.encryptcookie?true:false
       log.info "grails.plugin.cookiesession.encryptcookie set: \'${encryptCookie}\'"
     }
@@ -162,7 +162,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.warn "the grails.plugin.cookiesession.hmac.algorithm is deprecated! Use the grails.plugin.cookiesession.cryptoalgorithm setting instead!"
 
     // initialize the crypto key
-    cryptoKey = new SecretKeySpec(cryptoSecret,cryptoAlgorithm.split('/')[0])
+    cryptoKey = new SecretKeySpec(cryptoSecret.bytes, cryptoAlgorithm.split('/')[0])
   }
 
   SerializableSession restoreSession( HttpServletRequest request ){
