@@ -47,7 +47,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   
   def grailsApplication
 
-  SecretKeySpec cryptoKey
+  def cryptoKey
 
   String cookieName = "grails_session" // default cookie name
   boolean encryptCookie = true
@@ -72,7 +72,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.info "grails.plugin.cookiesession.encryptcookie not set. defaulting to \'${encryptCookie}\'"
     }
 
-    if( ch.config.grails.plugin.cookiesession.cryptoalgorithm ){
+    if( ch.config.grails.plugin.cookiesession.containsKey('cryptoalgorithm') ){
       cryptoAlgorithm = ch.config.grails.plugin.cookiesession.cryptoalgorithm.toString()
       log.info "grails.plugin.cookiesession.cryptoalgorithm set: \'${cryptoAlgorithm}\'"
     }
@@ -81,7 +81,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.info "grails.plugin.cookiesession.cryptoalgorithm not set. defaulting to \'${cryptoAlgorithm}\'"
     }
 
-    if( ch.config.grails.plugin.cookiesession.sessiontimeout ){
+    if( ch.config.grails.plugin.cookiesession.containsKey('sessiontimeout') ){
       maxInactiveInterval = ch.config.grails.plugin.cookiesession.sessiontimeout * 1000
       if( maxInactiveInterval == -1 ){
         log.info "config.grails.plugin.cookiesession.sessiontimeout set to -1. sessions will remain active while the user's browser remain open"
@@ -99,7 +99,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.info "grails.plugin.cookiesession.sessiontimeout not set. defaulting to ${maxInactiveInterval}"
     }
 
-    if( ch.config.grails.plugin.cookiesession.cookiename ){
+    if( ch.config.grails.plugin.cookiesession.containsKey('cookiename') ){
       cookieName = ch.config.grails.plugin.cookiesession.cookiename
       log.info "grails.plugin.cookiesession.cookiename set: \'${cookieName}\'"
     }else{
@@ -107,16 +107,21 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.info "grails.plugin.cookiesession.cookiename not set. defaulting to \'${cookieName}\'"
     }
 
-    if( ch.config.grails.plugin.cookiesession.secret ){
-      cryptoSecret = ch.config.grails.plugin.cookiesession.secret
+    if( ch.config.grails.plugin.cookiesession.containsKey('secret') ){
+      if( ch.config.grails.plugin.cookiesession.secret instanceof byte[] )
+        cryptoSecret = ch.config.grails.plugin.cookiesession.secret
+      else
+        cryptoSecret = ch.config.grails.plugin.cookiesession.secret.bytes
+
       log.info "grails.plugin.cookiesession.secret set: \'${cryptoSecret.collect{ 'x' }.join()}\'" 
-    }else{
-      cryptoSecret = (0..4).collect{ UUID.randomUUID().toString() }.join() 
-      log.info "grails.plugin.cookiesession.secret not set: defaulting to \'${cryptoSecret.collect{ 'x' }.join()}\'" 
-      log.warn "Crypto secret is not configured for session repository. Sessions can only be decrypted for this instance of the application. to make session transportable between multiple instances of this application, set the grails.plugin.cookiesession.secret configuration explicitly."
+      if( !encryptCookie )
+        log.warn "grails.plugin.cookiesession.secret is set, but encryptcookie == false. Set encryptcookie to true if you want to encrypt sessions!"
+    }
+    else if( encryptCookie ) {
+      log.warn "Crypto secret is not configured for session repository. A random key will be generated.  Sessions can only be decrypted for this instance of the application. To make session transportable between multiple instances of this application, set the grails.plugin.cookiesession.secret configuration explicitly."
     }
 
-    if( ch.config.grails.plugin.cookiesession.cookiecount ){
+    if( ch.config.grails.plugin.cookiesession.containsKey('cookiecount') ){
       cookieCount =  ch.config.grails.plugin.cookiesession.cookiecount
       log.info "grails.plugin.cookiesession.cookiecount set: ${cookieCount}"
     }
@@ -125,7 +130,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.info "grails.plugin.cookiesession.cookiecount not set. defaulting to ${cookieCount}"
     }
 
-    if( ch.config.grails.plugin.cookiesession.maxcookiesize ){
+    if( ch.config.grails.plugin.cookiesession.containsKey('maxcookiesize') ){
 
       maxCookieSize = ch.config.grails.plugin.cookiesession.maxcookiesize.toInteger()
 
@@ -146,23 +151,31 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
     }
 
-    if( ch.config.grails.plugin.cookiesession.id )
+    if( ch.config.grails.plugin.cookiesession.containsKey('id') )
       log.warn "the grails.plugin.cookiesession.id setting is deprecated! Use the grails.plugin.cookiesession.cookiename setting instead!"
 
-    if( ch.config.grails.plugin.cookiesession.timeout )
+    if( ch.config.grails.plugin.cookiesession.containsKey('timeout') )
       log.warn "the grails.plugin.cookiesession.timeout setting is deprecated! Use the grails.plugin.cookiesession.sessiontimeout setting instead!" 
 
-    if( ch.config.grails.plugin.cookiesession.hmac.secret )
+    if( ch.config.grails.plugin.cookiesession.hmac.containsKey('secret') )
       log.warn "the grails.plugin.cookiesession.hmac.secret setting is deprecated! Use the grails.plugin.cookiesession.secret setting instead!"
 
-    if( ch.config.grails.plugin.cookiesession.hmac.id )
+    if( ch.config.grails.plugin.cookiesession.hmac.containsKey('id') )
       log.warn "the grails.plugin.cookiesession.hmac.id setting is deprecated!"
 
-    if( ch.config.grails.plugin.cookiesession.hmac.algorithm )
+    if( ch.config.grails.plugin.cookiesession.hmac.containsKey('algorithm') )
       log.warn "the grails.plugin.cookiesession.hmac.algorithm is deprecated! Use the grails.plugin.cookiesession.cryptoalgorithm setting instead!"
 
     // initialize the crypto key
-    cryptoKey = new SecretKeySpec(cryptoSecret.bytes, cryptoAlgorithm.split('/')[0])
+    if( cryptoSecret == null ){
+      def keyGenerator = javax.crypto.KeyGenerator.getInstance( cryptoAlgorithm.split('/')[0] )
+      def secureRandom = new java.security.SecureRandom()
+      keyGenerator.init(secureRandom)
+      cryptoKey = keyGenerator.generateKey()
+    }
+    else{
+      cryptoKey = new SecretKeySpec(cryptoSecret, cryptoAlgorithm.split('/')[0])
+    }
   }
 
   SerializableSession restoreSession( HttpServletRequest request ){
