@@ -63,7 +63,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
 
     log.info "configuring CookieSessionRepository"
    
-    if( ch.config.grails.plugin.cookiesession.encryptcookie != null ){
+    if( ch.config.grails.plugin.cookiesession.containsKey('encryptcookie') ){
       encryptCookie = ch.config.grails.plugin.cookiesession.encryptcookie?true:false
       log.info "grails.plugin.cookiesession.encryptcookie set: \'${encryptCookie}\'"
     }
