@@ -1,7 +1,7 @@
 
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.0
+Current Version: 2.0.1
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -228,6 +228,6 @@ As the request processing comes to a conclussion the SessionRepositoryResponseWr
 
 The CookieSession object is a spring bean that implements the SessionRepository interface. This object is injected injected into the application so that it can be replaced with alternative implementations that can store the session to different locations such as database, shared in-memory store, shared filesystem, etc.
 
-## automated tests
-automated tests for this plugin are located at:
-github.com/benlucchesi/test-cookie-session-plugin
+## How to contribute
+If you want to contribute a bug fix, please work from the 'develop' branch. Additionally, before submitting a pull request please confirm that all of the tests in test suite pass. The test suite is located at github.com/benlucchesi/test-cookie-session-plugin
+
