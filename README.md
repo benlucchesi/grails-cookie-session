@@ -121,7 +121,7 @@ Config.groovy
     grails.plugin.cookiesession.enabled = true
     grails.plugin.cookiesession.encryptcookie = true
     grails.plugin.cookiesession.cryptoalgorithm = "Blowfish"
-    grails.plugin.cookiesession.secret = "This is my secret. There are many like it, but this one is mine.".bytes
+    grails.plugin.cookiesession.secret = "This is my secret."
     grails.plugin.cookiesession.cookiecount = 10
     grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
     grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
