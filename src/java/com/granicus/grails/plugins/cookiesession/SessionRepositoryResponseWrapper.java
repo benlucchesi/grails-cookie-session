@@ -28,18 +28,18 @@ import org.apache.log4j.Logger;
 
 public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper {
        
-  static final Logger log = Logger.getLogger(SessionRepositoryResponseWrapper.class.getName());
+    static final Logger log = Logger.getLogger(SessionRepositoryResponseWrapper.class.getName());
 
-  private String sessionId = "simplesession";
-  private SessionRepository sessionRepository;
-  private SerializableSession session;
-  private boolean sessionSaved = false;
+    private String sessionId = "simplesession";
+    private SessionRepository sessionRepository;
+    private SerializableSession session;
+    private boolean sessionSaved = false;
 
-  public SessionRepositoryResponseWrapper( HttpServletResponse response, 
+    public SessionRepositoryResponseWrapper( HttpServletResponse response, 
                                               SessionRepository sessionRepository, SerializableSession session) {
-    super(response);
-      this.sessionRepository = sessionRepository;
-      this.session = session;
+      super(response);
+        this.sessionRepository = sessionRepository;
+        this.session = session;
     }
 
     public void saveSession(){
@@ -68,6 +68,14 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
 
       sessionRepository.saveSession(session,this);
     }
+
+    @Override
+    public void setStatus(int sc){
+      if( log.isTraceEnabled() ){ log.trace("intercepting setStatus to save session"); }
+      this.saveSession();
+      super.setStatus(sc);
+    }
+
 
     @Override
     public void flushBuffer() throws java.io.IOException{
