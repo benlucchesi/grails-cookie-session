@@ -63,7 +63,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     <tr>
       <td>grails.plugin.cookiesession.secret</td>
       <td><b>generated</b></td>
-      <td>The secret key used to encrypt session data. If not set, a random key will be created at runtime. If multiple instances of the application are deployed, this parameter must be set manually so the application can decrypt data produced by any of the instances.</td>
+      <td>The secret key used to encrypt session data. If not set, a random key will be created at runtime. Set this parameter if you are deploying multiple instances of the application or if sessions need to survive a server crash or restart. sessions to be recovered after a server crash or restart.</td>
     </tr>
     <tr>
       <td>grails.plugin.cookiesession.cookiecount</td>
