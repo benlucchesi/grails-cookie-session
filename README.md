@@ -33,6 +33,13 @@ The Cookie Session plugin enables grails applications to store session data in h
 
 grails install-plugin cookie-session
 
+  or
+
+edit grails/conf/Build.config and add the following line under the plugins closure
+
+  runtime ":cookie-session:2.0.2"
+
+
 # Configuration
 The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
 
@@ -183,7 +190,9 @@ SessionPersistenceListener defines the following methods:
     void afterSessionRestored( SerializableSession session )
     void beforeSessionSaved( SerializableSession session )
 
-To use, write a class that implements this interface and define the object in your application's spring application context. The CookieSession plugin will scan the application context and retrieve references to all classes that implement SessionPersistenceListener. The order that the SessionPersistenceListeners are called is unspecified.
+To use, write a class that implements this interface and define the object in your application's spring application context (grails-app/conf/spring/resources.groovy). The CookieSession plugin will scan the application context and retrieve references to all classes that implement SessionPersistenceListener. The order that the SessionPersistenceListeners are called is unspecified. For an example of how to implement a SessionPersistenceListener, see the ExceptionCondenser class which is part of the cookie-session plugin.
+
+The ExceptionCondenser uses beforeSessionSaved() to replace instances of Exceptions the exception's message. This is useful because some libraries, notably the spring-security, store exceptions in the session, which can cause the cookie-session storage to overflow. The ExceptionCondenser can be installed in your application by either adding it in the application context or by enabling it with the convenience settings grails.plugin.cookiesession.condenseexceptions = true.
 
 ## Logging
 
