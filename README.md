@@ -1,7 +1,7 @@
 
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.2
+Current Version: 2.0.3
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -85,6 +85,13 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>gsession-X</td>
       <td>X number of cookies will be written per the cookiecount parameter. Each cookie is suffixed with the integer index of the cookie.</td>
     </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.condenseexceptions</td>
+      <td>false</td>
+      <td>replaces instances of Exceptions objects in the session with the Exception.getMessage() in the session (see SessionPersistanceListener for further details)</td> 
+    </tr>
+
     <tr>
       <td>grails.plugin.cookiesession.id</td>
       <td><b>deprecated</b></td>
@@ -111,10 +118,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>deprecated. use the 'grails.plugin.cookiesession.cryptoalgorithm' settings.</td>
     </tr>
 
-    <tr>
-      <td>grails.plugin.cookiesession.condenseexceptions</td>
-      <td>false</td>
-      <td>installs the ExceptionCondenser (SessionPersistenceListener) which replaces Exception instance in the session with the exception's message value (see notes on CondenseException and SessionPersistenceListener later in this documentation)</td> 
+
   </tbody>
 </table>
 
@@ -171,6 +175,15 @@ This causes deserialization of the conversation container to fail because a sess
 when it was serialized isn't present. This scenario occurs when the conversation container is deserialized 
 by an instance of of the application other than the one where the conversation container originated. The solution is to explicitly 
 name the session factory so that an object with the same name is always available during deserialization.
+
+## SessionPersistenceListener (versions 2.0.3+)
+SessionPersistenceListener is an interface used inspect the session just after its been deserialized from persistent storage and just before being serialized and persisted. 
+
+SessionPersistenceListener defines the following methods:
+    void afterSessionRestored( SerializableSession session )
+    void beforeSessionSaved( SerializableSession session )
+
+To use, write a class that implements this interface and define the object in your application's spring application context. The CookieSession plugin will scan the application context and retrieve references to all classes that implement SessionPersistenceListener. The order that the SessionPersistenceListeners are called is unspecified.
 
 ## Logging
 
