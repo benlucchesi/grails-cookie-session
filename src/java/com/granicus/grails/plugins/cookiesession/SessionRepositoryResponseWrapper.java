@@ -17,12 +17,14 @@
  *  ben@granicus.com or benlucchesi@gmail.com
  */
 
-
 package com.granicus.grails.plugins.cookiesession;
 
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletOutputStream;
+
+import java.util.Map;
+import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
@@ -34,12 +36,18 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
     private SessionRepository sessionRepository;
     private SerializableSession session;
     private boolean sessionSaved = false;
+    private ArrayList<SessionPersistenceListener> sessionPersistenceListeners;
 
     public SessionRepositoryResponseWrapper( HttpServletResponse response, 
                                               SessionRepository sessionRepository, SerializableSession session) {
       super(response);
-        this.sessionRepository = sessionRepository;
-        this.session = session;
+      this.sessionRepository = sessionRepository;
+      this.session = session;
+    }
+
+    public void setSessionPersistenceListeners(ArrayList<SessionPersistenceListener> value){
+      if( log.isTraceEnabled() ){ log.trace("setSessionPersistenceListeners()"); }
+      this.sessionPersistenceListeners = value;
     }
 
     public void saveSession(){
@@ -66,6 +74,18 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
 
       if( log.isTraceEnabled() ){ log.trace("calling session repository to save session."); }
 
+      // call sessionPersistenceListeners
+      if( sessionPersistenceListeners != null ){
+        for( SessionPersistenceListener listener : sessionPersistenceListeners ){
+          try{
+            listener.beforeSessionSaved(session);
+          }
+          catch( Exception excp ){
+            log.error("Error calling SessionPersistenceListener.beforeSessionSaved(): " + excp.toString());
+          }
+        }
+      }
+ 
       sessionRepository.saveSession(session,this);
     }
 

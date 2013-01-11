@@ -1,7 +1,7 @@
 
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.2
+Current Version: 2.0.3
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -32,6 +32,13 @@ The Cookie Session plugin enables grails applications to store session data in h
 # Installation
 
 grails install-plugin cookie-session
+
+  or
+
+edit grails/conf/Build.config and add the following line under the plugins closure
+
+  runtime ":cookie-session:2.0.2"
+
 
 # Configuration
 The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
@@ -85,6 +92,13 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>gsession-X</td>
       <td>X number of cookies will be written per the cookiecount parameter. Each cookie is suffixed with the integer index of the cookie.</td>
     </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.condenseexceptions</td>
+      <td>false</td>
+      <td>replaces instances of Exceptions objects in the session with the Exception.getMessage() in the session (see SessionPersistanceListener for further details)</td> 
+    </tr>
+
     <tr>
       <td>grails.plugin.cookiesession.id</td>
       <td><b>deprecated</b></td>
@@ -111,6 +125,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>deprecated. use the 'grails.plugin.cookiesession.cryptoalgorithm' settings.</td>
     </tr>
 
+
   </tbody>
 </table>
 
@@ -126,6 +141,7 @@ Config.groovy
     grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
     grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
     grails.plugin.cookiesession.cookiename = 'gsession'
+    grails.plugin.cookiesession.condenseexceptions = false
 
 ## Understanding cookiecount and maxcookiesize
 The maximum session size stored by this plugin is calculated by (cookiecount * maxcookiesize). The reason for these two parameters is that through experimentation, some browsers didn't reliably set large cookies set before the subsequent request. To solve this issue, this plugin supports configuring the max size of each cookie stored and the number of cookies to span the session over. The default values are conservative. If sessions in your application meet or exceed the max session size as configured, first increase the cookiecount and then the maxcookiesize parameters.
@@ -166,6 +182,17 @@ This causes deserialization of the conversation container to fail because a sess
 when it was serialized isn't present. This scenario occurs when the conversation container is deserialized 
 by an instance of of the application other than the one where the conversation container originated. The solution is to explicitly 
 name the session factory so that an object with the same name is always available during deserialization.
+
+## SessionPersistenceListener (versions 2.0.3+)
+SessionPersistenceListener is an interface used inspect the session just after its been deserialized from persistent storage and just before being serialized and persisted. 
+
+SessionPersistenceListener defines the following methods:
+    void afterSessionRestored( SerializableSession session )
+    void beforeSessionSaved( SerializableSession session )
+
+To use, write a class that implements this interface and define the object in your application's spring application context (grails-app/conf/spring/resources.groovy). The CookieSession plugin will scan the application context and retrieve references to all classes that implement SessionPersistenceListener. The order that the SessionPersistenceListeners are called is unspecified. For an example of how to implement a SessionPersistenceListener, see the ExceptionCondenser class which is part of the cookie-session plugin.
+
+The ExceptionCondenser uses beforeSessionSaved() to replace instances of Exceptions the exception's message. This is useful because some libraries, notably the spring-security, store exceptions in the session, which can cause the cookie-session storage to overflow. The ExceptionCondenser can be installed in your application by either adding it in the application context or by enabling it with the convenience settings grails.plugin.cookiesession.condenseexceptions = true.
 
 ## Logging
 

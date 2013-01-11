@@ -23,18 +23,26 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.Map;
+import java.util.ArrayList;
+
 import org.apache.log4j.Logger;
 
 public class SessionRepositoryRequestWrapper extends HttpServletRequestWrapper {
 
       final static Logger log = Logger.getLogger(SessionRepositoryRequestWrapper.class.getName());
 
-      private SerializableSession session;
-      private SessionRepository sessionRepository;
+      SerializableSession session;
+      SessionRepository sessionRepository;
+      ArrayList<SessionPersistenceListener> sessionPersistenceListeners;
 
-      public SessionRepositoryRequestWrapper( HttpServletRequest request, SessionRepository sessionRepository ){
+      public SessionRepositoryRequestWrapper( HttpServletRequest request, SessionRepository sessionRepository){
         super( request );
         this.sessionRepository = sessionRepository;
+      }
+
+      public void setSessionPersistenceListeners(ArrayList<SessionPersistenceListener> value){
+        this.sessionPersistenceListeners = value;
       }
 
       public void restoreSession() {
@@ -44,8 +52,20 @@ public class SessionRepositoryRequestWrapper extends HttpServletRequestWrapper {
         // if a session was restored
         // - set isNew == false
         // - assign the servlet context
-        
+
         session = sessionRepository.restoreSession( this );
+
+        if( sessionPersistenceListeners != null ){
+          // call sessionPersistenceListeners
+          for( SessionPersistenceListener listener : sessionPersistenceListeners ){
+            try{
+              listener.afterSessionRestored(session);
+            }
+            catch( Exception excp ){
+              log.error("Error calling SessionPersistenceListener.afterSessionRestored(): " + excp.toString());
+            }
+          }
+        }
       }
       
       @Override

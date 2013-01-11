@@ -183,39 +183,46 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     
     SerializableSession session = null
 
-    // - get the data from the cookie 
-    // - deserialize the session (handles compression and encryption)
-    // - check to see if the session is expired
-    // - return the session
+    try{
+      // - get the data from the cookie 
+      // - deserialize the session (handles compression and encryption)
+      // - check to see if the session is expired
+      // - return the session
 
-    def serializedSession = getDataFromCookie(request)
+      def serializedSession = getDataFromCookie(request)
 
-    if( serializedSession ){
-      session = deserializeSession(serializedSession)
+      if( serializedSession ){
+        session = deserializeSession(serializedSession)
+      }
+
+      def currentTime = System.currentTimeMillis()
+      def lastAccessedTime = session?.lastAccessedTime?:0
+      long inactiveInterval = currentTime - lastAccessedTime 
+
+      if( session ){
+        if( session.isValid == false ){
+          log.info "retrieved invalidated session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}.";
+          session = null
+        }
+        else if( maxInactiveInterval == -1 || inactiveInterval <= maxInactiveInterval ){
+          log.info "retrieved valid session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}"
+          session.isNewSession = false
+          session.lastAccessedTime = System.currentTimeMillis()
+          session.servletContext = request.servletContext
+        }
+        else if( inactiveInterval > maxInactiveInterval ){
+          log.info "retrieved expired session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}. expired by ${inactiveInterval} ms.";
+          session = null
+        }
+      }
+      else{
+        log.info "no session retrieved from cookie."
+      }
+
     }
-
-    def currentTime = System.currentTimeMillis()
-    def lastAccessedTime = session?.lastAccessedTime?:0
-    long inactiveInterval = currentTime - lastAccessedTime 
-
-    if( session ){
-      if( session.isValid == false ){
-        log.info "retrieved invalidated session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}.";
-        session = null
-      }
-      else if( maxInactiveInterval == -1 || inactiveInterval <= maxInactiveInterval ){
-        log.info "retrieved valid session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}"
-        session.isNewSession = false
-        session.lastAccessedTime = System.currentTimeMillis()
-        session.servletContext = request.servletContext
-      }
-      else if( inactiveInterval > maxInactiveInterval ){
-        log.info "retrieved expired session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}. expired by ${inactiveInterval} ms.";
-        session = null
-      }
-    }
-    else{
-      log.info "no session retrieved from cookie."
+    catch( excp ){
+      log.error "An error occurred while restoring session from cookies. A null session will be returned and a new SerializableSession will be created.. Exception follows:\n ${excp}"
+      session = null
     }
 
     return session
@@ -224,7 +231,9 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   void saveSession( SerializableSession session, HttpServletResponse response ){
     log.trace "saveSession()"
 
+
     String serializedSession = serializeSession(session) 
+
     if( session.isValid )
       putDataInCookie(response, serializedSession )
     else
@@ -324,7 +333,6 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       def end = start + maxCookieSize - 1
       if( end >= input.size() )
         end = start + input.size() % maxCookieSize - 1
-      log.trace "partition: ${i}, start: ${start}, end: ${end}"  
       list[i] = input[start..end]
     }
 
@@ -342,12 +350,12 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     log.trace "getDataFromCookie()"
 
     def values = request.cookies.findAll{ 
-      it.name.startsWith(cookieName) }?.sort{ 
-        it.name.split('-')[1].toInteger() }.collect{ it.value }
+        it.name.startsWith(cookieName) }?.sort{ 
+          it.name.split('-')[1].toInteger() }.collect{ it.value }
    
-    def data = combineStrings(values)
+    String data = combineStrings(values)
     log.debug "retrieved ${data.size()} bytes of data from ${values.size()} session cookies."
-
+    
     return data 
   }
 
@@ -356,6 +364,12 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
 
     // the cookie's maxAge will either be -1 or the number of seconds it should live for
     def maxAge = maxInactiveInterval == -1 ? maxInactiveInterval : (Integer)(maxInactiveInterval / 1000)
+
+    if( value.length() > maxCookieSize * cookieCount )
+    {
+      log.error "Serialized session exceeds maximum session size that can be stored in cookies. Max size: ${maxCookieSize*cookieCount}, Requested Session Size: ${value.length()}."
+      throw new Exception("Serialized session exceeded max size.") 
+    }  
 
     def partitions = splitString(value)
     partitions.eachWithIndex{ it, i ->
