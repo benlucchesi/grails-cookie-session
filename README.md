@@ -111,6 +111,10 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>deprecated. use the 'grails.plugin.cookiesession.cryptoalgorithm' settings.</td>
     </tr>
 
+    <tr>
+      <td>grails.plugin.cookiesession.condenseexceptions</td>
+      <td>false</td>
+      <td>installs the ExceptionCondenser (SessionPersistenceListener) which replaces Exception instance in the session with the exception's message value (see notes on CondenseException and SessionPersistenceListener later in this documentation)</td> 
   </tbody>
 </table>
 
@@ -126,6 +130,7 @@ Config.groovy
     grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
     grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
     grails.plugin.cookiesession.cookiename = 'gsession'
+    grails.plugin.cookiesession.condenseexceptions = false
 
 ## Understanding cookiecount and maxcookiesize
 The maximum session size stored by this plugin is calculated by (cookiecount * maxcookiesize). The reason for these two parameters is that through experimentation, some browsers didn't reliably set large cookies set before the subsequent request. To solve this issue, this plugin supports configuring the max size of each cookie stored and the number of cookies to span the session over. The default values are conservative. If sessions in your application meet or exceed the max session size as configured, first increase the cookiecount and then the maxcookiesize parameters.

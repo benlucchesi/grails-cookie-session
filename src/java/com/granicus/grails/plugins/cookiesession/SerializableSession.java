@@ -74,7 +74,6 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public long getCreationTime(){
-        //assertValid();
         return ( creationTime );
       }
 
@@ -87,7 +86,6 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public long getLastAccessedTime(){
-        //assertValid();
         return ( lastAccessedTime );
       }
 
@@ -112,17 +110,14 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public Object getAttribute(String name){
-        //assertValid();
         return ( attributes.get(name) );
       }
 
       public Object getValue(String name){
-        //assertValid();
         return getAttribute(name);
       }
 
       public Enumeration getAttributeNames(){
-        //assertValid();
         final Iterator<String> keys = attributes.keySet().iterator();
         final Enumeration names = new Enumeration(){
           public boolean hasMoreElements(){ return keys.hasNext();  }
@@ -133,12 +128,11 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public String[] getValueNames(){
-        //assertValid();
         return ( attributes.keySet().toArray( new String[0] ) );
       }
 
       public void setAttribute(String name, Object value){
-        //assertValid();
+
         attributes.put(name,(Serializable)value);
         if( value != null && value instanceof HttpSessionBindingListener ){
           try{
@@ -155,7 +149,6 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public void removeAttribute(String name){
-        //assertValid();
         Object value = attributes.remove(name);
         if( value != null && value instanceof HttpSessionBindingListener ){
           try{
@@ -168,7 +161,6 @@ public class SerializableSession implements HttpSession, Serializable {
       }
 
       public void removeValue(String name){
-        //assertValid();
         this.removeAttribute(name);
       }
 
@@ -180,14 +172,6 @@ public class SerializableSession implements HttpSession, Serializable {
         this.newSession = isNewSession;
       }
       public boolean isNew(){
-        //assertValid();
         return ( this.newSession );
       }
-
-    /*
-      protected void assertValid(){
-        if( !isValid )
-          throw new IllegalStateException();
-      }
-    */
 }
