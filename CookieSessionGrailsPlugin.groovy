@@ -37,7 +37,7 @@ class CookieSessionGrailsPlugin {
     // Online location of the plugin's browseable source code.
     def scm = [url: 'http://github.com/benlucchesi/grails-cookie-session-v2']
 
-    def loadAfter = ['controllers']
+    //def loadAfter = ['controllers']
 
     def getWebXmlFilterOrder() {
         //[cookieSessionFilter: -100]
