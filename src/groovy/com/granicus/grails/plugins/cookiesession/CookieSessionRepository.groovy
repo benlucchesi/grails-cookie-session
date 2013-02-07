@@ -36,6 +36,14 @@ import javax.crypto.CipherOutputStream
 import javax.crypto.SealedObject
 import javax.crypto.Cipher
 
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
+import com.esotericsoftware.shaded.org.objenesis.strategy.StdInstantiatorStrategy
+import com.esotericsoftware.kryo.serializers.FieldSerializer
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
+
+import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
 import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
 import java.util.UUID
@@ -56,6 +64,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   long maxInactiveInterval = 120 * 1000
   int cookieCount = 5
   int maxCookieSize = 2048
+  String serializer = "java"
 
   void afterPropertiesSet(){
 
@@ -128,6 +137,22 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     else{
       cookieCount = 5
       log.info "grails.plugin.cookiesession.cookiecount not set. defaulting to ${cookieCount}"
+    }
+
+    if( ch.config.grails.plugin.cookiesession.containsKey('serializer') ){
+      if( ! ['java','kryo'].contains( ch.config.grails.plugin.cookiesession.serializer ) ){
+        serializer = 'java'
+        log.error "grails.plugin.cookiesession.serializer set to invalid value. defaulting to 'java'"
+      }
+      else{
+        serializer = ch.config.grails.plugin.cookiesession.serializer
+      } 
+      
+      log.info "grails.plugin.cookiesession.serializer set: ${serializer}"
+    }
+    else{
+      serializer = 'java'
+      log.info "grails.plugin.cookiesession.serializer not set. defaulting to ${serializer}"
     }
 
     if( ch.config.grails.plugin.cookiesession.containsKey('maxcookiesize') ){
@@ -245,9 +270,21 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
 
     log.trace "serializing and compressing session"
     ByteArrayOutputStream stream = new ByteArrayOutputStream()
-    new GZIPOutputStream(stream).withObjectOutputStream{ oos ->
-        oos.writeObject(session)
-    }
+
+    switch( serializer ){
+      case 'kryo':
+        Kryo kryo = getConfiguredKryoSerializer()
+        Output output = new Output(new GZIPOutputStream(stream))
+        kryo.writeObject(output,session)
+        output.close()
+      break
+      
+      case 'java':
+        def output = new ObjectOutputStream(new GZIPOutputStream(stream))
+        output.writeObject(session)
+        output.close()
+      break
+    } 
 
     byte[] output = null
     if( encryptCookie ){
@@ -263,6 +300,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     log.trace "base64 encoding serialized session"
     def serializedSession = output.encodeBase64().toString()
 
+    log.info "serialized session: ${serializedSession.size()} bytes"
     return serializedSession
   }
 
@@ -284,8 +322,16 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
       }
 
       log.trace "decompressing and deserializing session"
-      def inputStream = new GZIPInputStream( new ByteArrayInputStream( input ) )
-      def objectInputStream = new ObjectInputStream(inputStream){
+
+      switch( serializer ){
+        case 'kryo':
+          def inputStream = new Input(new GZIPInputStream( new ByteArrayInputStream( input ) ))
+          Kryo kryo = getConfiguredKryoSerializer()
+          session = kryo.readObject(inputStream,SerializableSession.class)
+        break;
+        
+        case 'java':
+          def inputStream = new ObjectInputStream(new GZIPInputStream( new ByteArrayInputStream( input ) )){
             @Override
             public Class resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
                 //noinspection GroovyUnusedCatchParameter
@@ -295,24 +341,33 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
                     return Class.forName(desc.getName())
                 }
             }
-      }
+          }
 
-      session = (SerializableSession)objectInputStream.readObject();
-     
-     /* 
-      .withObjectInputStream( grailsApplication.classLoader ){ ois ->
-          session = (SerializableSession)ois.readObject()
+          session = (SerializableSession)inputStream.readObject();
+        break;
       }
-      */
     }
     catch( excp ){
-      log.error "An error occurred while deserializing a session. ${excp}}"
+      log.error "An error occurred while deserializing a session. ${excp}"
+      log.error "cause: ${excp.cause}"
+      excp.printStackTrace()
       session = null
     }
 
     log.debug "deserialized session: ${session != null}"
 
     return session 
+  }
+
+  private def getConfiguredKryoSerializer(){
+    def kryo = new Kryo()
+    def flashScopeSerializer = new FieldSerializer(kryo, GrailsFlashScope.class);
+    kryo.register(GrailsFlashScope.class,flashScopeSerializer)
+    kryo.register(SerializableSession.class)
+    kryo.classLoader = grailsApplication.classLoader
+    kryo.instantiatorStrategy = new StdInstantiatorStrategy()
+    UnmodifiableCollectionsSerializer.registerSerializers( kryo );
+    return kryo
   }
 
   private String[] splitString(String input){

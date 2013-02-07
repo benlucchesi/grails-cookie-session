@@ -11,8 +11,12 @@ grails.project.dependency.resolution = {
     log "warn" // log level of Ivy resolver, either 'error', 'warn', 'info', 'debug' or 'verbose'
     repositories {
         grailsCentral()
+        mavenCentral()
     }
     dependencies {
+      compile 'com.esotericsoftware.kryo:kryo:2.20' 
+      compile 'org.objenesis:objenesis:1.3'
+      compile 'de.javakaffee:kryo-serializers:0.22'
     }
 
     plugins {
