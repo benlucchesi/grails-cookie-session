@@ -25,7 +25,7 @@ import com.granicus.grails.plugins.cookiesession.ExceptionCondenser
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean
 
 class CookieSessionGrailsPlugin {
-    def version = "2.0.3"
+    def version = "2.0.4"
     def grailsVersion = "1.2.4 > *"
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
@@ -37,8 +37,12 @@ class CookieSessionGrailsPlugin {
     // Online location of the plugin's browseable source code.
     def scm = [url: 'http://github.com/benlucchesi/grails-cookie-session-v2']
 
+    //def loadAfter = ['controllers']
+
     def getWebXmlFilterOrder() {
-        [cookieSessionFilter: -100]
+        //[cookieSessionFilter: -100]
+        def filterManager = getClass().getClassLoader().loadClass('grails.plugin.webxml.FilterManager')
+        [cookieSessionFilter: filterManager.GRAILS_WEB_REQUEST_POSITION - 1]
     }
 
     def doWithWebDescriptor = { xml ->
@@ -57,11 +61,12 @@ class CookieSessionGrailsPlugin {
             }
         }
 
+        // will be repositioned with getWebXmlFilterOrder()
         def filter = xml.'filter'
         filter[filter.size() - 1] + {
-            'filter-mapping' {
-                'filter-name'('cookieSessionFilter')
-                'url-pattern'('/*')
+          'filter-mapping' {
+            'filter-name'('cookieSessionFilter')
+            'url-pattern'('/*')
             }
         }
     }
