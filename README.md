@@ -1,7 +1,7 @@
 
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.4
+Current Version: 2.0.5
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -37,7 +37,7 @@ grails install-plugin cookie-session
 
 edit grails/conf/Build.config and add the following line under the plugins closure
 
-  runtime ":cookie-session:2.0.4"
+  runtime ":cookie-session:2.0.5"
 
 
 # Configuration
@@ -158,9 +158,14 @@ Config.groovy
 The maximum session size stored by this plugin is calculated by (cookiecount * maxcookiesize). The reason for these two parameters is that through experimentation, some browsers didn't reliably set large cookies set before the subsequent request. To solve this issue, this plugin supports configuring the max size of each cookie stored and the number of cookies to span the session over. The default values are conservative. If sessions exceed the max session size as configured, first increase the cookiecount and then the maxcookiesize parameters.
 
 ## Enabling large session
-To enable large sessions, increase the max http header size of the tomcat http connector. In tomcat this can be configured in the server.xml with the maxHttpHeaderSize parameter. Set the parameter to something large, such as 262144 ( 256kb ). 
+To enable large sessions, increase the max http header size for the servlet container you are using. 
 
-When developing in grails, configure the embedded tomcat instance with the tomcat startup event:
+Due to the potentially large amount of data that may be stored, consider setting it to something large, such as 262144 ( 256kb ).
+
+### Tomcat
+Edit the server.xml and set the connector's maxHttpHeaderSize parameter. 
+
+When developing in grails, configure the embedded tomcat server with the tomcat configuration event:
 
 1.  create the file scripts/_Events.groovy in your project directory
 2.  add the following code:
@@ -169,10 +174,16 @@ When developing in grails, configure the embedded tomcat instance with the tomca
           tomcat.connector.setAttribute("maxHttpHeaderSize",262144)
         }
 
-If you're using a container other than tomcat, refer to the documentation to figure out how to configure the maximum http header size.
+### Jetty (2.0.5+)
+Edit the jetty.xml or web.xml and set the connector's requestHeaderSize and responseHeaderSize parameters.
 
-These configuration changes are needed because by default the max http header in tomcat is 8kb which is far to small
-for storing a serialized session.
+1.  create the file scripts/_Events.groovy in your project directory
+2.  add the following code:
+
+        eventConfigureJetty = {jetty ->
+          jetty.connectors[0].requestHeaderSize = 262144
+          jetty.connectors[0].responseHeaderSize = 262144
+        }
 
 ## Enabling Webflow Support
 In order for cookie-session-v2 to work with webflows correctly, additional hibernate configuration is needed.
