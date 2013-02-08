@@ -22,6 +22,7 @@ package com.granicus.grails.plugins.cookiesession;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.ServletContext;
 
 import java.util.Map;
 import java.util.ArrayList;
@@ -32,10 +33,11 @@ public class SessionRepositoryRequestWrapper extends HttpServletRequestWrapper {
 
       final static Logger log = Logger.getLogger(SessionRepositoryRequestWrapper.class.getName());
 
+      ServletContext servletContext;
       SerializableSession session;
       SessionRepository sessionRepository;
       ArrayList<SessionPersistenceListener> sessionPersistenceListeners;
-
+      
       public SessionRepositoryRequestWrapper( HttpServletRequest request, SessionRepository sessionRepository){
         super( request );
         this.sessionRepository = sessionRepository;
@@ -100,5 +102,13 @@ public class SessionRepositoryRequestWrapper extends HttpServletRequestWrapper {
         
         // session repository is responsible for determining if the requested session id is valid.
         return sessionRepository.isSessionIdValid( this.getRequestedSessionId() );
+      }
+
+      public ServletContext getServletContext(){
+        return servletContext;
+      }
+
+      public void setServletContext(ServletContext ctx){
+        servletContext = ctx;
       }
     }

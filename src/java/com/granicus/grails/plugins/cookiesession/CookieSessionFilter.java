@@ -69,6 +69,7 @@ public class CookieSessionFilter extends OncePerRequestFilter implements Initial
       if( log.isTraceEnabled() ){ log.trace("doFilterInteral()"); }
   
       SessionRepositoryRequestWrapper requestWrapper = new SessionRepositoryRequestWrapper( request, sessionRepository );
+      requestWrapper.setServletContext( this.getServletContext() );
       requestWrapper.setSessionPersistenceListeners(this.sessionPersistenceListeners);
       requestWrapper.restoreSession();
 
