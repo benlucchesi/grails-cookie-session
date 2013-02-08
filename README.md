@@ -180,10 +180,10 @@ Edit the jetty.xml or web.xml and set the connector's requestHeaderSize and resp
 1.  create the file scripts/_Events.groovy in your project directory
 2.  add the following code:
 
-      eventConfigureJetty = {jetty ->
-        jetty.connectors[0].requestHeaderSize = 262144
-        jetty.connectors[0].responseHeaderSize = 262144
-      }
+        eventConfigureJetty = {jetty ->
+          jetty.connectors[0].requestHeaderSize = 262144
+          jetty.connectors[0].responseHeaderSize = 262144
+        }
 
 ## Enabling Webflow Support
 In order for cookie-session-v2 to work with webflows correctly, additional hibernate configuration is needed.
