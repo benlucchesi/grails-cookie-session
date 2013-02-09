@@ -373,21 +373,21 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   private String[] splitString(String input){
     log.trace "splitString()"
 
-    def list = new String[cookieCount];
+    String[] list = new String[cookieCount];
 
     if( !input ){
       log.trace "input empty or null."
       return list
     }
 
-    def partitions = input.size() / maxCookieSize 
+    int inputLength = input.size()
+
+    def partitions = Math.ceil(inputLength / maxCookieSize)
     log.trace "splitting input of size ${input.size()} string into ${partitions} paritions"
 
-    (0..partitions).each{ i ->
-      def start = i * maxCookieSize;
-      def end = start + maxCookieSize - 1
-      if( end >= input.size() )
-        end = start + input.size() % maxCookieSize - 1
+    for (int i = 0; i < partitions; i++){ 
+      int start = i * maxCookieSize
+      int end = Math.min(start + maxCookieSize - 1, inputLength - 1)
       list[i] = input[start..end]
     }
 
