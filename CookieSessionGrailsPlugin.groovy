@@ -19,6 +19,8 @@
 
 import org.springframework.web.filter.DelegatingFilterProxy
 import grails.util.Environment
+import com.granicus.grails.plugins.cookiesession.JavaSessionSerializer
+import com.granicus.grails.plugins.cookiesession.KryoSessionSerializer
 import com.granicus.grails.plugins.cookiesession.CookieSessionFilter
 import com.granicus.grails.plugins.cookiesession.CookieSessionRepository
 import com.granicus.grails.plugins.cookiesession.ExceptionCondenser
@@ -87,6 +89,16 @@ class CookieSessionGrailsPlugin {
 
         if( application.config.grails.plugin.cookiesession.condenseexceptions ) 
           exceptionCondenser(ExceptionCondenser)
+
+        // ALWAYS CONFIGURED!
+        javaSessionSerializer(JavaSessionSerializer){
+          grailsApplication = ref("grailsApplication")
+        }
+
+        if( application.config.grails.plugin.cookiesession.serializer == "kryo" )
+          kryoSessionSerializer(KryoSessionSerializer){
+            grailsApplication = ref("grailsApplication")
+          }
     }
 
 }
