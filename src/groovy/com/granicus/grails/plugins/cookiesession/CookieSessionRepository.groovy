@@ -20,6 +20,10 @@
 package com.granicus.grails.plugins.cookiesession;
 
 import org.springframework.beans.factory.InitializingBean
+import org.springframework.security.core.authority.GrantedAuthorityImpl
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.io.ByteArrayOutputStream;
 
@@ -36,13 +40,6 @@ import javax.crypto.CipherOutputStream
 import javax.crypto.SealedObject
 import javax.crypto.Cipher
 
-import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io.Input
-import com.esotericsoftware.kryo.io.Output
-import com.esotericsoftware.shaded.org.objenesis.strategy.StdInstantiatorStrategy
-import com.esotericsoftware.kryo.serializers.FieldSerializer
-import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
-
 import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
 import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
@@ -51,10 +48,10 @@ import java.util.UUID
 import groovy.util.logging.Log4j
 
 @Log4j
-class CookieSessionRepository implements SessionRepository, InitializingBean  {
+class CookieSessionRepository implements SessionRepository, InitializingBean, ApplicationContextAware  {
   
   def grailsApplication
-
+  ApplicationContext applicationContext
   def cryptoKey
 
   String cookieName = "grails_session" // default cookie name
@@ -65,6 +62,8 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   int cookieCount = 5
   int maxCookieSize = 2048
   String serializer = "java"
+
+  SessionSerializer sessionSerializer = null
 
   void afterPropertiesSet(){
 
@@ -140,19 +139,27 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     }
 
     if( ch.config.grails.plugin.cookiesession.containsKey('serializer') ){
-      if( ! ['java','kryo'].contains( ch.config.grails.plugin.cookiesession.serializer ) ){
-        serializer = 'java'
-        log.error "grails.plugin.cookiesession.serializer set to invalid value. defaulting to 'java'"
+
+      serializer = ch.config.grails.plugin.cookiesession.serializer
+
+      if( serializer == "java" ){
+        serializer = "javaSessionSerializer"
+      }
+      else if( serializer == "kryo" ){
+        serializer = "kryoSessionSerializer"
+      }
+      else if( applicationContext.containsBean(serializer) && applicationContext.getType(serializer) instanceof SessionSerializer ){
       }
       else{
-        serializer = ch.config.grails.plugin.cookiesession.serializer
-      } 
+        log.error "no valid serializer configured. defaulting to java"
+        serializer = "javaSessionSerializer"
+      }
       
       log.info "grails.plugin.cookiesession.serializer set: ${serializer}"
     }
     else{
-      serializer = 'java'
-      log.info "grails.plugin.cookiesession.serializer not set. defaulting to ${serializer}"
+      serializer = 'javaSessionSerializer'
+      log.info "grails.plugin.cookiesession.serializer not set. defaulting to java." 
     }
 
     if( ch.config.grails.plugin.cookiesession.containsKey('maxcookiesize') ){
@@ -175,6 +182,11 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     if( maxCookieSize * cookieCount > 6114 ){
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
     }
+
+    if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
+      log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${ch.config.grails.plugin.cookiesession.springsecuritycompatibility}"
+    else
+      log.info "grails.plugin.cookiesession.springsecuritycompatibility not set. defaulting to false"
 
     if( ch.config.grails.plugin.cookiesession.containsKey('id') )
       log.warn "the grails.plugin.cookiesession.id setting is deprecated! Use the grails.plugin.cookiesession.cookiename setting instead!"
@@ -268,37 +280,30 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
   String serializeSession( SerializableSession session ){
     log.trace "serializeSession()"
 
-    log.trace "serializing and compressing session"
+    log.trace "getting sessionSerializer: ${serializer}"
+    def sessionSerializer = applicationContext.getBean(serializer)
+
+    log.trace "serializing session"
+    byte[] bytes = sessionSerializer.serialize(session)
+   
+    log.trace "compressing serialiezd session from ${bytes.length} bytes"
     ByteArrayOutputStream stream = new ByteArrayOutputStream()
+    def gzipOut = new GZIPOutputStream(stream)
+    gzipOut.write(bytes,0,bytes.length)
+    gzipOut.close()
+ 
+    bytes = stream.toByteArray()
+    log.trace "compressed serialized session to ${bytes.length}"
 
-    switch( serializer ){
-      case 'kryo':
-        Kryo kryo = getConfiguredKryoSerializer()
-        Output output = new Output(new GZIPOutputStream(stream))
-        kryo.writeObject(output,session)
-        output.close()
-      break
-      
-      case 'java':
-        def output = new ObjectOutputStream(new GZIPOutputStream(stream))
-        output.writeObject(session)
-        output.close()
-      break
-    } 
-
-    byte[] output = null
     if( encryptCookie ){
       log.trace "encrypting serialized session"
       Cipher cipher = Cipher.getInstance(cryptoAlgorithm)
       cipher.init( Cipher.ENCRYPT_MODE, cryptoKey ) 
-      output = cipher.doFinal(stream.toByteArray())
-    }
-    else{
-      output = stream.toByteArray()
+      bytes = cipher.doFinal(bytes)
     }
 
-    log.trace "base64 encoding serialized session"
-    def serializedSession = output.encodeBase64().toString()
+    log.trace "base64 encoding serialized session from ${bytes.length} bytes"
+    def serializedSession = bytes.encodeBase64().toString()
 
     log.info "serialized session: ${serializedSession.size()} bytes"
     return serializedSession
@@ -308,44 +313,35 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     log.trace "deserializeSession()"
 
     def session = null
-
+    
     try
     {
-      log.trace "decodeBase64 serialized session"
+      log.trace "decodeBase64 serialized session from ${serializedSession.size()} bytes."
       def input = serializedSession.decodeBase64()
-
+ 
       if( encryptCookie ){
-        log.trace "decrypting cookie"
+        log.trace "decrypting serialized session from ${input.length} bytes."
         Cipher cipher = Cipher.getInstance(cryptoAlgorithm)
         cipher.init( Cipher.DECRYPT_MODE, cryptoKey ) 
         input = cipher.doFinal(input)
       }
 
-      log.trace "decompressing and deserializing session"
-
-      switch( serializer ){
-        case 'kryo':
-          def inputStream = new Input(new GZIPInputStream( new ByteArrayInputStream( input ) ))
-          Kryo kryo = getConfiguredKryoSerializer()
-          session = kryo.readObject(inputStream,SerializableSession.class)
-        break;
-        
-        case 'java':
-          def inputStream = new ObjectInputStream(new GZIPInputStream( new ByteArrayInputStream( input ) )){
-            @Override
-            public Class resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-                //noinspection GroovyUnusedCatchParameter
-                try {
-                    return grailsApplication.classLoader.loadClass(desc.getName())
-                } catch (ClassNotFoundException ex) {
-                    return Class.forName(desc.getName())
-                }
-            }
-          }
-
-          session = (SerializableSession)inputStream.readObject();
-        break;
+      log.trace "decompressing serialized session from ${input.length} bytes"
+      def inputStream = new GZIPInputStream( new ByteArrayInputStream( input ) )
+      def outputStream = new ByteArrayOutputStream()
+      
+      byte[] buffer = new byte[1024]
+      int bytesRead = 0
+      while( (bytesRead = inputStream.read(buffer)) != -1 ){
+        outputStream.write(buffer,0,bytesRead)
       }
+      outputStream.flush()
+     
+      byte[] bytes = outputStream.toByteArray()
+      log.trace "decompressed serialized session to ${bytes.length} bytes"
+
+      def sessionSerializer = applicationContext.getBean(serializer)
+      session = sessionSerializer.deserialize(bytes) 
     }
     catch( excp ){
       log.error "An error occurred while deserializing a session. ${excp}"
@@ -357,17 +353,6 @@ class CookieSessionRepository implements SessionRepository, InitializingBean  {
     log.debug "deserialized session: ${session != null}"
 
     return session 
-  }
-
-  private def getConfiguredKryoSerializer(){
-    def kryo = new Kryo()
-    def flashScopeSerializer = new FieldSerializer(kryo, GrailsFlashScope.class);
-    kryo.register(GrailsFlashScope.class,flashScopeSerializer)
-    kryo.register(SerializableSession.class)
-    kryo.classLoader = grailsApplication.classLoader
-    kryo.instantiatorStrategy = new StdInstantiatorStrategy()
-    UnmodifiableCollectionsSerializer.registerSerializers( kryo );
-    return kryo
   }
 
   private String[] splitString(String input){

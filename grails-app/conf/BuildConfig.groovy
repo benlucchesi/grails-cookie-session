@@ -21,6 +21,8 @@ grails.project.dependency.resolution = {
 
     plugins {
     
+        build ':spring-security-core:1.2.7.3'
+
         build(":release:2.0.4") {
             export = false
         }
