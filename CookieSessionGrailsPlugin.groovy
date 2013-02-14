@@ -88,7 +88,7 @@ class CookieSessionGrailsPlugin {
           sessionRepository = ref("sessionRepository")
         }
 
-        if( application.config.grails.plugin.cookiesession.condenseexceptions ) 
+        if( application.config.grails.plugin.cookiesession.containsKey("condenseexceptions") && application.config.grails.plugin.cookiesession["condenseexceptions"] == true ) 
           exceptionCondenser(ExceptionCondenser)
 
         // ALWAYS CONFIGURED!
@@ -96,12 +96,12 @@ class CookieSessionGrailsPlugin {
           grailsApplication = ref("grailsApplication")
         }
 
-        if( application.config.grails.plugin.cookiesession.serializer == "kryo" )
+        if( application.config.grails.plugin.cookiesession.containsKey("serializer") && application.config.grails.plugin.cookiesession["serializer"] == "kryo" )
           kryoSessionSerializer(KryoSessionSerializer){
             grailsApplication = ref("grailsApplication")
           }
-         
-        if( application.config.grails.plugin.cookiesession.springsecuritycompatibility )
+
+        if( application.config.grails.plugin.cookiesession.containsKey("springsecuritycompatibility") &&  application.config.grails.plugin.cookiesession["springsecuritycompatibility"] == true )
           securityContextSessionPersistenceListener(SecurityContextSessionPersistenceListener)
     }
 

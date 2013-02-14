@@ -184,7 +184,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     }
 
     if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
-      log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${ch.config.grails.plugin.cookiesession.springsecuritycompatibility}"
+      log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${ch.config.grails.plugin.cookiesession['springsecuritycompatibility']}"
     else
       log.info "grails.plugin.cookiesession.springsecuritycompatibility not set. defaulting to false"
 
