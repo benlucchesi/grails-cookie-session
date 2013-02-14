@@ -37,13 +37,26 @@ import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
 
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.GrantedAuthorityImpl
+import org.springframework.beans.factory.InitializingBean
 
 import java.util.Collections;
 
+import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
+
+
 @Log4j
-class KryoSessionSerializer implements SessionSerializer{
+class KryoSessionSerializer implements SessionSerializer, InitializingBean{
 
   GrailsApplication grailsApplication
+
+  boolean springSecurityCompatibility = false
+
+  void afterPropertiesSet(){
+      log.trace "afterPropertiesSet()"
+      if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') ){
+        springSecurityCompatibility = ch.config.grails.plugin.cookiesession.springsecuritycompatibility
+      }
+  }
 
   public byte[] serialize(SerializableSession session){
     log.trace "serializeSession()"
@@ -81,12 +94,14 @@ class KryoSessionSerializer implements SessionSerializer{
     def localeSerializer = new LocaleSerializer()
     kryo.register(java.util.Locale.class,localeSerializer)
 
-    def s1 = new GrantedAuthoritiesListSerializer()
-    kryo.register(Collections.unmodifiableList(new ArrayList<GrantedAuthority>()).class,s1)
-
-    def s2 = new GrantedAuthoritiesSetSerializer()
-    kryo.register(Collections.unmodifiableSet(new TreeSet<GrantedAuthority>()).class,s2)
-
+    if( springSecurityCompatibility ){
+      kryo.register(Collections.unmodifiableList(new ArrayList<GrantedAuthority>()).class,new GrantedAuthoritiesListSerializer())
+      kryo.register(Collections.unmodifiableSet(new TreeSet<GrantedAuthority>()).class,new GrantedAuthoritiesSetSerializer())
+    }
+    else{
+      UnmodifiableCollectionsSerializer.registerSerializers( kryo );
+    }
+    
     kryo.classLoader = grailsApplication.classLoader
     kryo.instantiatorStrategy = new StdInstantiatorStrategy()
 
@@ -99,7 +114,7 @@ class KryoSessionSerializer implements SessionSerializer{
     kryo.register( Collections.singletonMap( "", "" ).getClass(), new CollectionsSingletonMapSerializer( ) );
     kryo.register( GregorianCalendar.class, new GregorianCalendarSerializer() );
     kryo.register( java.lang.reflect.InvocationHandler.class, new JdkProxySerializer( ) );
-    //UnmodifiableCollectionsSerializer.registerSerializers( kryo );
+
     SynchronizedCollectionsSerializer.registerSerializers( kryo );
 
     return kryo

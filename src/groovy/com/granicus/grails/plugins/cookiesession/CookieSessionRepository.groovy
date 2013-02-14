@@ -183,6 +183,11 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
     }
 
+    if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
+      log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${ch.config.grails.plugin.cookiesession.springsecuritycompatibility}"
+    else
+      log.info "grails.plugin.cookiesession.springsecuritycompatibility not set. defaulting to false"
+
     if( ch.config.grails.plugin.cookiesession.containsKey('id') )
       log.warn "the grails.plugin.cookiesession.id setting is deprecated! Use the grails.plugin.cookiesession.cookiename setting instead!"
 
