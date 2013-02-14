@@ -19,13 +19,16 @@
 
 import org.springframework.web.filter.DelegatingFilterProxy
 import grails.util.Environment
+import com.granicus.grails.plugins.cookiesession.JavaSessionSerializer
+import com.granicus.grails.plugins.cookiesession.KryoSessionSerializer
 import com.granicus.grails.plugins.cookiesession.CookieSessionFilter
 import com.granicus.grails.plugins.cookiesession.CookieSessionRepository
 import com.granicus.grails.plugins.cookiesession.ExceptionCondenser
+import com.granicus.grails.plugins.cookiesession.SecurityContextSessionPersistenceListener
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean
 
 class CookieSessionGrailsPlugin {
-    def version = "2.0.6"
+    def version = "2.0.7"
     def grailsVersion = "1.2.4 > *"
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
@@ -85,8 +88,21 @@ class CookieSessionGrailsPlugin {
           sessionRepository = ref("sessionRepository")
         }
 
-        if( application.config.grails.plugin.cookiesession.condenseexceptions ) 
+        if( application.config.grails.plugin.cookiesession.containsKey("condenseexceptions") && application.config.grails.plugin.cookiesession["condenseexceptions"] == true ) 
           exceptionCondenser(ExceptionCondenser)
+
+        // ALWAYS CONFIGURED!
+        javaSessionSerializer(JavaSessionSerializer){
+          grailsApplication = ref("grailsApplication")
+        }
+
+        if( application.config.grails.plugin.cookiesession.containsKey("serializer") && application.config.grails.plugin.cookiesession["serializer"] == "kryo" )
+          kryoSessionSerializer(KryoSessionSerializer){
+            grailsApplication = ref("grailsApplication")
+          }
+
+        if( application.config.grails.plugin.cookiesession.containsKey("springsecuritycompatibility") &&  application.config.grails.plugin.cookiesession["springsecuritycompatibility"] == true )
+          securityContextSessionPersistenceListener(SecurityContextSessionPersistenceListener)
     }
 
 }
