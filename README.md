@@ -226,21 +226,30 @@ The ExceptionCondenser uses beforeSessionSaved() to replace instances of Excepti
 The grails.plugin.cookiesession.serializer config setting is used to pick which serializer the cookie-session plugin will use to serialize sessions. Currently, only two options are supported: 'java' and 'kryo'. 'java' is used to pick the java.io API serializer. This serializer has proven to be reliable and works 'out of the box'. 'kryo' is used to pick the Kryo serializer (http://code.google.com/p/kryo/). The Kryo serializer has many benifits over the Java serializer, primarily serialized results are significantly smaller which reduces the size of the session cookies. However, the Kryo serializer requires configuration to work correctly with some grails and spring objects. By default the kryo serializer is configured to serialize GrailsFlashScope and other basic grails objects. If the application uses spring-security, you must enabled springsecuritycompatibility for the cookie-session plugin. Additionally you should verify that the serializer is successfully serializing all objects that will be stored in the session. Configure info level logging for 'com.granicus.grails.plugins.cookiesession.CookieSessionRepository' for test and development environments to monitor the serialization and deserialization process. If objects fail to serialize, please report an issue to this github project; a best effort will be made to make the kryo serializer as compatible as possible. If the kryo serializer doesn't work for your application, consider falling back to the java serializer or implementing your own SessionSerializer as described below.
 
 (version 2.0.7+)
+
 Cookie-session can also be configured with a custom SessionSerializer. A SessionSerializer is an object that implements the SessionSerializer interface. The SessionSerializer inteface has only two methods: 
+
         byte[] serialize(SerializableSession session)
         SerializableSession deserialize(byte[] serializedSession)
+
 These methods are used to convert a SerializableSession into an array of bytes and to convert an array of bytes into a SerializableSession. How your implementation of a SessionSerializer object accomplishes this is of no concern to the cookie-session plugin, just as long as these two methods return valid values. Note: your serialization code doesn't need to be concerned with compression or encryption; these functions are handled by the plugin.
 
 To configure a customer serializer:
-    1) write a class that implements the SessionSerializer interface 
-    2) configure your SessionSerializer as a bean in the grails-app/conf/spring/resources.groovy. For example:
+1)  write a class that implements the SessionSerializer interface 
+2)  configure your SessionSerializer as a bean in the grails-app/conf/spring/resources.groovy. For example:
+
         beans = {
           mySerializer(MySerializer)
         }
-    3) assign the name of your configured bean to the config parameter 'serializer' in grails-app/conf/Config.groovy. For example:
+
+3)  assign the name of your configured bean to the config parameter 'serializer' in grails-app/conf/Config.groovy. For example:
+
         grails.plugin.cookiesession.serializer = 'mySerializer'
 
-For examples of how to implement a SessionSerializer, reference the com.granicus.grails.plugins.cookiesession.JavaSessionSerializer or com.granicus.grails.plugins.cookiesession.KryoSessionSerializer.
+For examples of how to implement a SessionSerializer, see the implementations of 
+
+* com.granicus.grails.plugins.cookiesession.JavaSessionSerializer 
+* com.granicus.grails.plugins.cookiesession.KryoSessionSerializer.
 
 ## Spring Security Compatibility (version 2.0.7+)
 Spring Security Compatibility, configured with the springsecuritycompatibility setting, directs the cookie-session plugin to adjust its behavior to be more compatible with thespring-security-core plugin. The primary issue addressed in this mode relates to when the spring-security core's SecurityContextPersistenceFilter writes the current security context to the SecurityContextRepository. In most cases, the SecurityContextPersistenceFilter stores the current security context after the current web response has been written. This is a problem for the cookie-session plugin because the session is stored in cookies in the web response. As a result, the current security context is never saved in the session, in effect losing the security context after each request. To work around this issue, spring security compatibility mode causes the cookie-session plugin to write the current security context to the session just before the session is serialized and saved in cookies. The security context is stored under the key that the SecurityContextRepository expects to find the security context. The next issue that Spring Security Compatibility addresses involves cookies saved in the DefaultSavedRequest. DefaultSavedRequest is created by spring security core and stored in the session during redirects, such as after authentication. Spring Security Compatibility causes the cookie-sessino plugin to detect the presense of a DefaultSavedRequest in the session and remove any cookie-session cookies it may be storing. This ensures that old session information doesn't replace more current session information when following a redirects. This also reduces the size of the the serialized session because the DefaultSavedRequest is storing an old copy of a session in the current session. Finally, Spring Security Compatibility adds custom kryo serializers (when kryo serialization is enabled) to successfully serialize objects that kryo isn't capable of serializing by default.
