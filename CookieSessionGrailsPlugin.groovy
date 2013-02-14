@@ -24,6 +24,7 @@ import com.granicus.grails.plugins.cookiesession.KryoSessionSerializer
 import com.granicus.grails.plugins.cookiesession.CookieSessionFilter
 import com.granicus.grails.plugins.cookiesession.CookieSessionRepository
 import com.granicus.grails.plugins.cookiesession.ExceptionCondenser
+import com.granicus.grails.plugins.cookiesession.SecurityContextSessionPersistenceListener
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean
 
 class CookieSessionGrailsPlugin {
@@ -99,6 +100,9 @@ class CookieSessionGrailsPlugin {
           kryoSessionSerializer(KryoSessionSerializer){
             grailsApplication = ref("grailsApplication")
           }
+         
+        if( application.config.grails.plugin.cookiesession.springsecuritycompatibility )
+          securityContextSessionPersistenceListener(SecurityContextSessionPersistenceListener)
     }
 
 }

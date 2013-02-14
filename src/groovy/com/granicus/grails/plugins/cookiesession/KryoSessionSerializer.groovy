@@ -16,7 +16,6 @@
  *  Ben Lucchesi
  *  ben@granicus.com or benlucchesi@gmail.com
  */
-
 package com.granicus.grails.plugins.cookiesession;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
@@ -36,6 +35,11 @@ import de.javakaffee.kryoserializers.*
 
 import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
 
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.GrantedAuthorityImpl
+
+import java.util.Collections;
+
 @Log4j
 class KryoSessionSerializer implements SessionSerializer{
 
@@ -43,39 +47,50 @@ class KryoSessionSerializer implements SessionSerializer{
 
   public byte[] serialize(SerializableSession session){
     log.trace "serializeSession()"
+
     Kryo kryo = getConfiguredKryoSerializer()
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
     Output output = new Output(outputStream)
     kryo.writeObject(output,session)
     output.close()
     def bytes = outputStream.toByteArray()
+
     log.trace "serialized session. ${bytes.size()}"
     return bytes
   }
 
   public SerializableSession deserialize(byte[] serializedSession){
     log.trace "deserializeSession()"
+
     def input = new Input(new ByteArrayInputStream( serializedSession ) )
     Kryo kryo = getConfiguredKryoSerializer()
     SerializableSession session = kryo.readObject(input,SerializableSession.class)
     log.trace "deserialized session."
+
     return session
   }
 
   private def getConfiguredKryoSerializer(){
+
     def kryo = new Kryo()
 
     // register fieldserializer for GrailsFlashScope
     def flashScopeSerializer = new FieldSerializer(kryo, GrailsFlashScope.class);
     kryo.register(GrailsFlashScope.class,flashScopeSerializer)
 
-    //def gais = new GrantedAuthorityImplSerializer()
-    //kryo.register(GrantedAuthorityImpl.class,gais)
+    def localeSerializer = new LocaleSerializer()
+    kryo.register(java.util.Locale.class,localeSerializer)
+
+    def s1 = new GrantedAuthoritiesListSerializer()
+    kryo.register(Collections.unmodifiableList(new ArrayList<GrantedAuthority>()).class,s1)
+
+    def s2 = new GrantedAuthoritiesSetSerializer()
+    kryo.register(Collections.unmodifiableSet(new TreeSet<GrantedAuthority>()).class,s2)
 
     kryo.classLoader = grailsApplication.classLoader
     kryo.instantiatorStrategy = new StdInstantiatorStrategy()
 
-    //kryo.register( Arrays.asList( "" ).getClass(), new ArraysAsListSerializer( kryo ) );
+    kryo.register( Arrays.asList( "" ).getClass(), new ArraysAsListSerializer( ) );
     kryo.register( Collections.EMPTY_LIST.getClass(), new CollectionsEmptyListSerializer() );
     kryo.register( Collections.EMPTY_MAP.getClass(), new CollectionsEmptyMapSerializer() );
     kryo.register( Collections.EMPTY_SET.getClass(), new CollectionsEmptySetSerializer() );
@@ -84,19 +99,83 @@ class KryoSessionSerializer implements SessionSerializer{
     kryo.register( Collections.singletonMap( "", "" ).getClass(), new CollectionsSingletonMapSerializer( ) );
     kryo.register( GregorianCalendar.class, new GregorianCalendarSerializer() );
     kryo.register( java.lang.reflect.InvocationHandler.class, new JdkProxySerializer( ) );
-    UnmodifiableCollectionsSerializer.registerSerializers( kryo );
-    SynchronizedCollectionsSerializer.registerSerializers( kryo );
-
-    // custom serializers for non-jdk libs
-    // register CGLibProxySerializer, works in combination with the appropriate action in handleUnregisteredClass (see below)
-    //kryo.register( CGLibProxySerializer.CGLibProxyMarker.class, new CGLibProxySerializer( kryo ) );
-    // joda datetime
-    //kryo.register( DateTime.class, new JodaDateTimeSerializer() );
-    // wicket
-    //kryo.register( MiniMap.class, new MiniMapSerializer( kryo ) );
-
     //UnmodifiableCollectionsSerializer.registerSerializers( kryo );
+    SynchronizedCollectionsSerializer.registerSerializers( kryo );
 
     return kryo
   }
+}
+
+public class LocaleSerializer extends Serializer<java.util.Locale> {
+
+  public LocaleSerializer (){
+  }
+
+  @Override
+  public void write (Kryo kryo, Output output, java.util.Locale locale) {
+    output.writeString(locale.language?:"")
+    output.writeString(locale.country?:"")
+    output.writeString(locale.variant?:"")
+  }
+
+  @Override
+  public Object create (Kryo kryo, Input input, Class<java.util.Locale> type) {
+    return new java.util.Locale(input.readString(),input.readString(),input.readString()) 
+  }
+
+  @Override
+  public Object read (Kryo kryo, Input input, Class<Locale> type) {
+    return new java.util.Locale(input.readString(),input.readString(),input.readString()) 
+  }
+}
+
+public class GrantedAuthoritiesListSerializer extends Serializer<Object> {
+
+  public GrantedAuthoritiesListSerializer(){
+
+  }
+
+  @Override
+  public void write (Kryo kryo, Output output, Object collection) {
+    String list = collection.each{ it.authority }.join(",")
+    kryo.writeClassAndObject( output, list )
+  }
+
+  @Override
+  public Object create (Kryo kryo, Input input, Class<Object> type) {
+    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) } 
+    return Collections.unmodifiableList(list)
+  }
+
+  @Override
+  public Object read (Kryo kryo, Input input, Class<Object> type) {
+    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) } 
+    return Collections.unmodifiableList(list)
+  }
+
+}
+
+public class GrantedAuthoritiesSetSerializer extends Serializer<Object> {
+
+  public GrantedAuthoritiesSetSerializer(){
+  }
+
+  @Override
+  public void write (Kryo kryo, Output output, Object collection) {
+    String list = collection.each{ it.authority }.join(",")
+    kryo.writeClassAndObject( output, list )
+  }
+
+  @Override
+  public Object create (Kryo kryo, Input input, Class<Object> type) {
+    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) } 
+    return Collections.unmodifiableSet(list)
+  }
+
+  @Override
+  public Object read (Kryo kryo, Input input, Class<Object> type) {
+    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) }.toSet() 
+    return Collections.unmodifiableSet(list)
+  }
+
 }
