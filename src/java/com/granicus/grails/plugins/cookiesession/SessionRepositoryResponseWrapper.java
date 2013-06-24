@@ -34,15 +34,16 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
 
     private String sessionId = "simplesession";
     private SessionRepository sessionRepository;
-    private SerializableSession session;
+    private SessionRepositoryRequestWrapper request;
     private boolean sessionSaved = false;
     private ArrayList<SessionPersistenceListener> sessionPersistenceListeners;
 
     public SessionRepositoryResponseWrapper( HttpServletResponse response, 
-                                              SessionRepository sessionRepository, SerializableSession session) {
+                                              SessionRepository sessionRepository,
+                                              SessionRepositoryRequestWrapper request ) {
       super(response);
       this.sessionRepository = sessionRepository;
-      this.session = session;
+      this.request = request;
     }
 
     public void setSessionPersistenceListeners(ArrayList<SessionPersistenceListener> value){
@@ -63,6 +64,8 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
         if( log.isTraceEnabled() ){ log.trace("session is already saved, not attempting to save again."); }
         return;
       }
+
+      SerializableSession session = (SerializableSession) request.getSession(false);
 
       if( session == null ){
         if( log.isTraceEnabled() ){ log.trace("session is null, not saving."); }
