@@ -73,6 +73,8 @@ public class SessionRepositoryRequestWrapper extends HttpServletRequestWrapper {
       @Override
       public HttpSession getSession(boolean create){
 
+        log.trace("getSession(" + create + ")");
+
         // if there isn't an existing session object and create == true, then
         // - create a new session object
         // - set isNew == true
@@ -81,6 +83,7 @@ public class SessionRepositoryRequestWrapper extends HttpServletRequestWrapper {
         // - return the session field regardless if what it contains
 
         if( session == null && create == true ){
+          log.trace("creating new session");
           session = new SerializableSession();
           session.setIsNewSession( true );
           session.setServletContext( this.getServletContext() );

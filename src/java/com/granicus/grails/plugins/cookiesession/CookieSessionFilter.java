@@ -73,9 +73,7 @@ public class CookieSessionFilter extends OncePerRequestFilter implements Initial
       requestWrapper.setSessionPersistenceListeners(this.sessionPersistenceListeners);
       requestWrapper.restoreSession();
 
-      SerializableSession session = (SerializableSession)requestWrapper.getSession();
-
-      SessionRepositoryResponseWrapper responseWrapper = new SessionRepositoryResponseWrapper( response, sessionRepository, session );
+      SessionRepositoryResponseWrapper responseWrapper = new SessionRepositoryResponseWrapper( response, sessionRepository, requestWrapper );
       responseWrapper.setSessionPersistenceListeners(this.sessionPersistenceListeners);
       chain.doFilter(requestWrapper, responseWrapper);
     }
