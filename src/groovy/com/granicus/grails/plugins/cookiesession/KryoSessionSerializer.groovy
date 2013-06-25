@@ -20,8 +20,6 @@ package com.granicus.grails.plugins.cookiesession;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-import groovy.util.logging.Log4j
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
@@ -43,25 +41,30 @@ import org.springframework.beans.factory.InitializingBean
 
 import java.util.Collections;
 
+import org.apache.log4j.Logger;
+
 import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
-
-@Log4j
 class KryoSessionSerializer implements SessionSerializer, InitializingBean{
+
+  final static Logger log = Logger.getLogger(KryoSessionSerializer.class.getName());
 
   GrailsApplication grailsApplication
 
   boolean springSecurityCompatibility = false
 
   void afterPropertiesSet(){
-      log.trace "afterPropertiesSet()"
+      log.trace "bean properties set, performing bean configuring bean"
+
       if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') ){
         springSecurityCompatibility = ch.config.grails.plugin.cookiesession['springsecuritycompatibility']?true:false
       }
+      
+      log.trace "Kryo serializer configured for spring security compatibility: ${springSecurityCompatibility}"
   }
 
   public byte[] serialize(SerializableSession session){
-    log.trace "serializeSession()"
+    log.trace "starting serialize session"
 
     Kryo kryo = getConfiguredKryoSerializer()
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
@@ -69,48 +72,53 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
     kryo.writeObject(output,session)
     output.close()
     def bytes = outputStream.toByteArray()
+    log.trace "finished serializing session: ${bytes}"
 
-    log.trace "serialized session. ${bytes.size()}"
     return bytes
   }
 
   public SerializableSession deserialize(byte[] serializedSession){
-    log.trace "deserializeSession()"
-
+    log.trace "starting deserializing session"
     def input = new Input(new ByteArrayInputStream( serializedSession ) )
     Kryo kryo = getConfiguredKryoSerializer()
     SerializableSession session = kryo.readObject(input,SerializableSession.class)
-    log.trace "deserialized session."
+    log.trace "finished deserializing session: ${session}"
 
     return session
   }
 
   private def getConfiguredKryoSerializer(){
-
+    log.trace "configuring kryo serializer"
     def kryo = new Kryo()
 
     // register fieldserializer for GrailsFlashScope
     def flashScopeSerializer = new FieldSerializer(kryo, GrailsFlashScope.class);
     kryo.register(GrailsFlashScope.class,flashScopeSerializer)
+    log.trace "registered FlashScopeSerializer"
 
     def localeSerializer = new LocaleSerializer()
     kryo.register(java.util.Locale.class,localeSerializer)
+    log.trace "registered LocaleSerializer"
 
     if( springSecurityCompatibility ){
       def grantedAuthorityImplSerializer = new GrantedAuthorityImplSerializer()
       kryo.register(GrantedAuthorityImpl.class,grantedAuthorityImplSerializer)
+      log.trace "registered GratedAuthorityImpl serializer"
 
       def grailsUserSerializer = new GrailsUserSerializer()
       kryo.register(GrailsUser.class,grailsUserSerializer)
+      log.trace "registered GrailsUser serializer"
 
       def usernamePasswordAuthenticationTokenSerializer = new UsernamePasswordAuthenticationTokenSerializer()
       kryo.register(UsernamePasswordAuthenticationToken.class,usernamePasswordAuthenticationTokenSerializer)
+      log.trace "registered UsernamePasswordAuthenticationToken serializer"
     }
     
     UnmodifiableCollectionsSerializer.registerSerializers( kryo );
     kryo.classLoader = grailsApplication.classLoader
-    kryo.instantiatorStrategy = new StdInstantiatorStrategy()
+    log.trace "grailsApplication.classLoader assigned to kryo.classLoader"
 
+    kryo.instantiatorStrategy = new StdInstantiatorStrategy()
     kryo.register( Arrays.asList( "" ).getClass(), new ArraysAsListSerializer( ) );
     kryo.register( Collections.EMPTY_LIST.getClass(), new CollectionsEmptyListSerializer() );
     kryo.register( Collections.EMPTY_MAP.getClass(), new CollectionsEmptyMapSerializer() );
@@ -122,6 +130,7 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
     kryo.register( java.lang.reflect.InvocationHandler.class, new JdkProxySerializer( ) );
 
     SynchronizedCollectionsSerializer.registerSerializers( kryo );
+    log.trace "configured kryo's standard serializers"
 
     return kryo
   }
@@ -129,58 +138,75 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
 
 public class LocaleSerializer extends Serializer<java.util.Locale> {
 
+  final static Logger log = Logger.getLogger(LocaleSerializer.class.getName());
+
   public LocaleSerializer (){
   }
 
   @Override
   public void write (Kryo kryo, Output output, java.util.Locale locale) {
+    log.trace "starting writing Locale: ${locale}"
     output.writeString(locale.language?:"")
     output.writeString(locale.country?:"")
     output.writeString(locale.variant?:"")
+    log.trace "finished writing locale ${locale}"
   }
 
   @Override
   public Object create (Kryo kryo, Input input, Class<java.util.Locale> type) {
-    return new java.util.Locale(input.readString(),input.readString(),input.readString()) 
+    log.trace "starting create Local"
+    return read(kryo,input,type)
   }
 
   @Override
   public Object read (Kryo kryo, Input input, Class<Locale> type) {
-    return new java.util.Locale(input.readString(),input.readString(),input.readString()) 
+    log.trace "starting reading Locale"
+    def locale = new java.util.Locale(input.readString(),input.readString(),input.readString()) 
+    log.trace "finished reading Locale: ${locale}"
+    return locale
   }
 }
 
 public class GrantedAuthorityImplSerializer extends Serializer<Object> {
+
+  final static Logger log = Logger.getLogger(GrantedAuthorityImplSerializer.class.getName());
 
   public GrantedAuthorityImplSerializer(){
   }
 
   @Override
   public void write (Kryo kryo, Output output, Object grantedAuth ) {
+    log.trace "started writing GrantedAuthorityImpl ${grantedAuth}"
     kryo.writeClassAndObject( output, grantedAuth.authority )
+    log.trace "finished writing GrantedAuthorityImpl ${grantedAuth}"
   }
 
   @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
-    def role = kryo.readClassAndObject( input )
-    return new GrantedAuthorityImpl(role)
+    log.trace "starting create GrantedAuthorityImpl" 
+    return read(kryo,input,type)
   }
 
   @Override
   public Object read (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "starting reading GrantedAuthorityImpl"
     def role = kryo.readClassAndObject( input )
-    return new GrantedAuthorityImpl(role)
+    def ga = new GrantedAuthorityImpl(role)
+    log.trace "finished reading GrantedAuthorityImpl: ${ga}"
+    return ga
   }
-
 }
 
-@Log4j
 public class GrailsUserSerializer extends Serializer<Object> {
+
+  final static Logger log = Logger.getLogger(GrailsUserSerializer.class.getName());
+
   public GrailsUserSerializer(){
   }
 
   @Override
   public void write (Kryo kryo, Output output, Object user) {
+    log.trace "starting writing ${user}"
     //NOTE: note writing authorities on purpose - those get written as part of the UsernamePasswordAuthenticationToken
     kryo.writeClassAndObject(output,user.id)
     kryo.writeClassAndObject(output,user.username)
@@ -188,46 +214,63 @@ public class GrailsUserSerializer extends Serializer<Object> {
     kryo.writeClassAndObject(output,user.accountNonLocked)
     kryo.writeClassAndObject(output,user.credentialsNonExpired)
     kryo.writeClassAndObject(output,user.enabled)
+    log.trace "finished writing ${user}"
   }
 
   @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "creating GrailsUser"
     return read(kryo,input,type)
   }
 
   @Override
   public Object read (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "starting reading GrailsUser"
     def id = kryo.readClassAndObject( input )
     def username = kryo.readClassAndObject( input )
     def accountNonExpired = kryo.readClassAndObject( input )
     def accountNonLocked = kryo.readClassAndObject( input )
     def credentialsNonExpired = kryo.readClassAndObject( input )
     def enabled = kryo.readClassAndObject( input )
-
-    return new GrailsUser(username,"",enabled,accountNonExpired,credentialsNonExpired,accountNonLocked,(Collection<GrantedAuthority>)[],id)
+    def user = new GrailsUser( username,
+                               "",
+                               enabled,
+                               accountNonExpired,
+                               credentialsNonExpired,
+                               accountNonLocked,
+                               (Collection<GrantedAuthority>)[],
+                               id )
+    log.trace "finished reading ${user}"
+    return user
   }
 }
 
-@Log4j
 public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Object> {
+  
+  final static Logger log = Logger.getLogger(UsernamePasswordAuthenticationTokenSerializer.class.getName());
+
   public UsernamePasswordAuthenticationTokenSerializer(){
   }
 
   @Override
   public void write (Kryo kryo, Output output, Object token) {
+    log.trace "starting writing ${token}"
     kryo.writeClassAndObject(output,token.principal)
     kryo.writeClassAndObject(output,token.credentials)
     kryo.writeClassAndObject(output,token.authorities)
     kryo.writeClassAndObject(output,token.details)
+    log.trace "finsihed writing ${token}"
   }
 
   @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "creating UsernamePasswordAuthenticationToken"
     return read(kryo,input,type)
   }
 
   @Override
   public Object read (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "starting reading UsernamePasswordAuthenticationToken" 
     def principal = kryo.readClassAndObject( input )
     def credentials = kryo.readClassAndObject( input )
     def authorities = kryo.readClassAndObject( input )
@@ -235,6 +278,9 @@ public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Ob
 
     def token = new UsernamePasswordAuthenticationToken(principal,credentials,authorities)
     token.details = details
+
+    log.trace "finished reading UsernamePasswordAuthenticationToken ${token}"  
+
     return token
   }
 }

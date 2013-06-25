@@ -45,11 +45,12 @@ import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
 import java.util.UUID
 
-import groovy.util.logging.Log4j
+import org.apache.log4j.Logger;
 
-@Log4j
 class CookieSessionRepository implements SessionRepository, InitializingBean, ApplicationContextAware  {
-  
+
+  final static Logger log = Logger.getLogger(CookieSessionRepository.class.getName());
+
   def grailsApplication
   ApplicationContext applicationContext
   def cryptoKey
