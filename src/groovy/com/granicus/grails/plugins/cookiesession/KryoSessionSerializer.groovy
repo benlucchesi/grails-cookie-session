@@ -35,6 +35,8 @@ import de.javakaffee.kryoserializers.*
 
 import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
 
+import org.codehaus.groovy.grails.plugins.springsecurity.GrailsUser
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.GrantedAuthorityImpl
 import org.springframework.beans.factory.InitializingBean
@@ -95,13 +97,17 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
     kryo.register(java.util.Locale.class,localeSerializer)
 
     if( springSecurityCompatibility ){
-      kryo.register(Collections.unmodifiableList(new ArrayList<GrantedAuthority>()).class,new GrantedAuthoritiesListSerializer())
-      kryo.register(Collections.unmodifiableSet(new TreeSet<GrantedAuthority>()).class,new GrantedAuthoritiesSetSerializer())
-    }
-    else{
-      UnmodifiableCollectionsSerializer.registerSerializers( kryo );
+      def grantedAuthorityImplSerializer = new GrantedAuthorityImplSerializer()
+      kryo.register(GrantedAuthorityImpl.class,grantedAuthorityImplSerializer)
+
+      def grailsUserSerializer = new GrailsUserSerializer()
+      kryo.register(GrailsUser.class,grailsUserSerializer)
+
+      def usernamePasswordAuthenticationTokenSerializer = new UsernamePasswordAuthenticationTokenSerializer()
+      kryo.register(UsernamePasswordAuthenticationToken.class,usernamePasswordAuthenticationTokenSerializer)
     }
     
+    UnmodifiableCollectionsSerializer.registerSerializers( kryo );
     kryo.classLoader = grailsApplication.classLoader
     kryo.instantiatorStrategy = new StdInstantiatorStrategy()
 
@@ -144,53 +150,91 @@ public class LocaleSerializer extends Serializer<java.util.Locale> {
   }
 }
 
-public class GrantedAuthoritiesListSerializer extends Serializer<Object> {
+public class GrantedAuthorityImplSerializer extends Serializer<Object> {
 
-  public GrantedAuthoritiesListSerializer(){
-
+  public GrantedAuthorityImplSerializer(){
   }
 
   @Override
-  public void write (Kryo kryo, Output output, Object collection) {
-    String list = collection.each{ it.authority }.join(",")
-    kryo.writeClassAndObject( output, list )
+  public void write (Kryo kryo, Output output, Object grantedAuth ) {
+    kryo.writeClassAndObject( output, grantedAuth.authority )
   }
 
   @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
-    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) } 
-    return Collections.unmodifiableList(list)
+    def role = kryo.readClassAndObject( input )
+    return new GrantedAuthorityImpl(role)
   }
 
   @Override
   public Object read (Kryo kryo, Input input, Class<Object> type) {
-    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) } 
-    return Collections.unmodifiableList(list)
+    def role = kryo.readClassAndObject( input )
+    return new GrantedAuthorityImpl(role)
   }
 
 }
 
-public class GrantedAuthoritiesSetSerializer extends Serializer<Object> {
-
-  public GrantedAuthoritiesSetSerializer(){
+@Log4j
+public class GrailsUserSerializer extends Serializer<Object> {
+  public GrailsUserSerializer(){
   }
 
   @Override
-  public void write (Kryo kryo, Output output, Object collection) {
-    String list = collection.each{ it.authority }.join(",")
-    kryo.writeClassAndObject( output, list )
+  public void write (Kryo kryo, Output output, Object user) {
+    //NOTE: note writing authorities on purpose - those get written as part of the UsernamePasswordAuthenticationToken
+    kryo.writeClassAndObject(output,user.id)
+    kryo.writeClassAndObject(output,user.username)
+    kryo.writeClassAndObject(output,user.accountNonExpired)
+    kryo.writeClassAndObject(output,user.accountNonLocked)
+    kryo.writeClassAndObject(output,user.credentialsNonExpired)
+    kryo.writeClassAndObject(output,user.enabled)
   }
 
   @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
-    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) } 
-    return Collections.unmodifiableSet(list)
+    return read(kryo,input,type)
   }
 
   @Override
   public Object read (Kryo kryo, Input input, Class<Object> type) {
-    def list = kryo.readClassAndObject( input ).split(',').collect{ new GrantedAuthorityImpl(it) }.toSet() 
-    return Collections.unmodifiableSet(list)
+    def id = kryo.readClassAndObject( input )
+    def username = kryo.readClassAndObject( input )
+    def accountNonExpired = kryo.readClassAndObject( input )
+    def accountNonLocked = kryo.readClassAndObject( input )
+    def credentialsNonExpired = kryo.readClassAndObject( input )
+    def enabled = kryo.readClassAndObject( input )
+
+    return new GrailsUser(username,"",enabled,accountNonExpired,credentialsNonExpired,accountNonLocked,(Collection<GrantedAuthority>)[],id)
+  }
+}
+
+@Log4j
+public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Object> {
+  public UsernamePasswordAuthenticationTokenSerializer(){
   }
 
+  @Override
+  public void write (Kryo kryo, Output output, Object token) {
+    kryo.writeClassAndObject(output,token.principal)
+    kryo.writeClassAndObject(output,token.credentials)
+    kryo.writeClassAndObject(output,token.authorities)
+    kryo.writeClassAndObject(output,token.details)
+  }
+
+  @Override
+  public Object create (Kryo kryo, Input input, Class<Object> type) {
+    return read(kryo,input,type)
+  }
+
+  @Override
+  public Object read (Kryo kryo, Input input, Class<Object> type) {
+    def principal = kryo.readClassAndObject( input )
+    def credentials = kryo.readClassAndObject( input )
+    def authorities = kryo.readClassAndObject( input )
+    def details = kryo.readClassAndObject( input )
+
+    def token = new UsernamePasswordAuthenticationToken(principal,credentials,authorities)
+    token.details = details
+    return token
+  }
 }
