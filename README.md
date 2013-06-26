@@ -37,7 +37,7 @@ grails install-plugin cookie-session
 
 edit grails/conf/Build.config and add the following line under the plugins closure
 
-  compile ":cookie-session:2.0.9"
+  compile ":cookie-session:2.0.10"
 
 # Configuration
 The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
