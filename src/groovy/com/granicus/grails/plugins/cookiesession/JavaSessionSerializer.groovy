@@ -20,12 +20,12 @@
 package com.granicus.grails.plugins.cookiesession;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
-import groovy.util.logging.Log4j
-
+import org.apache.log4j.Logger;
 import java.io.ByteArrayOutputStream;
 
-@Log4j
 class JavaSessionSerializer implements SessionSerializer{
+
+  final static Logger log = Logger.getLogger(JavaSessionSerializer.class.getName());
 
   GrailsApplication grailsApplication
 

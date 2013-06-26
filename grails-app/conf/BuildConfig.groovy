@@ -14,9 +14,14 @@ grails.project.dependency.resolution = {
         mavenCentral()
     }
     dependencies {
-      compile 'com.esotericsoftware.kryo:kryo:2.20' 
-      compile 'org.objenesis:objenesis:1.3'
-      compile 'de.javakaffee:kryo-serializers:0.22'
+      //compile 'com.esotericsoftware.kryo:kryo:2.20' 
+      //compile 'org.objenesis:objenesis:1.3'
+      //compile 'de.javakaffee:kryo-serializers:0.22'
+
+      runtime 'com.esotericsoftware.kryo:kryo:2.20'
+      runtime 'org.objenesis:objenesis:1.3'
+      runtime 'de.javakaffee:kryo-serializers:0.22'
+
     }
 
     plugins {

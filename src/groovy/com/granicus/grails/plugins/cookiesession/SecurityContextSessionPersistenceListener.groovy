@@ -26,10 +26,11 @@ import org.springframework.security.web.context.SecurityContextRepository
 
 import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
-import groovy.util.logging.Log4j
+import org.apache.log4j.Logger;
 
-@Log4j
 public class SecurityContextSessionPersistenceListener implements SessionPersistenceListener, InitializingBean {
+
+    final static Logger log = Logger.getLogger(SerializableSession.class.getName());
 
     String cookieName = "gsession"
 
