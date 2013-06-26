@@ -20,7 +20,6 @@
 package com.granicus.grails.plugins.cookiesession;
 
 import org.springframework.beans.factory.InitializingBean
-import org.springframework.security.core.authority.GrantedAuthorityImpl
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
