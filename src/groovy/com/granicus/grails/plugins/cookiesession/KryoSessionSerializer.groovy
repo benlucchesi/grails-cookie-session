@@ -18,8 +18,6 @@
  */
 package com.granicus.grails.plugins.cookiesession;
 
-import org.codehaus.groovy.grails.commons.GrailsApplication
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
@@ -33,10 +31,6 @@ import de.javakaffee.kryoserializers.*
 
 import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
 
-import org.codehaus.groovy.grails.plugins.springsecurity.GrailsUser
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.GrantedAuthorityImpl
 import org.springframework.beans.factory.InitializingBean
 
 import java.util.Collections;
@@ -49,9 +43,13 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
 
   final static Logger log = Logger.getLogger(KryoSessionSerializer.class.getName());
 
-  GrailsApplication grailsApplication
+  def grailsApplication
 
   boolean springSecurityCompatibility = false
+
+  def usernamePasswordAuthenticationTokenClass
+  def grantedAuthorityImplClass
+  def grailsUserClass
 
   void afterPropertiesSet(){
       log.trace "bean properties set, performing bean configuring bean"
@@ -101,16 +99,25 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
     log.trace "registered LocaleSerializer"
 
     if( springSecurityCompatibility ){
+
+      usernamePasswordAuthenticationTokenClass = grailsApplication.classLoader.loadClass(
+        "org.springframework.security.authentication.UsernamePasswordAuthenticationToken")
+      grantedAuthorityImplClass = grailsApplication.classLoader.loadClass("org.springframework.security.core.authority.GrantedAuthorityImpl")
+      grailsUserClass = grailsApplication.classLoader.loadClass("org.codehaus.groovy.grails.plugins.springsecurity.GrailsUser")
+
       def grantedAuthorityImplSerializer = new GrantedAuthorityImplSerializer()
-      kryo.register(GrantedAuthorityImpl.class,grantedAuthorityImplSerializer)
+      grantedAuthorityImplSerializer.targetClass = grantedAuthorityImplClass
+      kryo.register(grantedAuthorityImplClass,grantedAuthorityImplSerializer)
       log.trace "registered GratedAuthorityImpl serializer"
 
       def grailsUserSerializer = new GrailsUserSerializer()
-      kryo.register(GrailsUser.class,grailsUserSerializer)
+      grailsUserSerializer.targetClass = grailsUserClass
+      kryo.register(grailsUserClass,grailsUserSerializer)
       log.trace "registered GrailsUser serializer"
 
       def usernamePasswordAuthenticationTokenSerializer = new UsernamePasswordAuthenticationTokenSerializer()
-      kryo.register(UsernamePasswordAuthenticationToken.class,usernamePasswordAuthenticationTokenSerializer)
+      usernamePasswordAuthenticationTokenSerializer.targetClass = usernamePasswordAuthenticationTokenClass
+      kryo.register(usernamePasswordAuthenticationTokenClass,usernamePasswordAuthenticationTokenSerializer)
       log.trace "registered UsernamePasswordAuthenticationToken serializer"
     }
     
@@ -170,6 +177,7 @@ public class LocaleSerializer extends Serializer<java.util.Locale> {
 public class GrantedAuthorityImplSerializer extends Serializer<Object> {
 
   final static Logger log = Logger.getLogger(GrantedAuthorityImplSerializer.class.getName());
+  def targetClass
 
   public GrantedAuthorityImplSerializer(){
   }
@@ -191,7 +199,10 @@ public class GrantedAuthorityImplSerializer extends Serializer<Object> {
   public Object read (Kryo kryo, Input input, Class<Object> type) {
     log.trace "starting reading GrantedAuthorityImpl"
     def role = kryo.readClassAndObject( input )
-    def ga = new GrantedAuthorityImpl(role)
+    
+    def constructor = targetClass.getConstructor(String.class)
+    def ga = constructor.newInstance(role)
+
     log.trace "finished reading GrantedAuthorityImpl: ${ga}"
     return ga
   }
@@ -200,6 +211,7 @@ public class GrantedAuthorityImplSerializer extends Serializer<Object> {
 public class GrailsUserSerializer extends Serializer<Object> {
 
   final static Logger log = Logger.getLogger(GrailsUserSerializer.class.getName());
+  def targetClass
 
   public GrailsUserSerializer(){
   }
@@ -232,13 +244,14 @@ public class GrailsUserSerializer extends Serializer<Object> {
     def accountNonLocked = kryo.readClassAndObject( input )
     def credentialsNonExpired = kryo.readClassAndObject( input )
     def enabled = kryo.readClassAndObject( input )
-    def user = new GrailsUser( username,
+    def constructor = targetClass.getConstructor(String.class, String.class, boolean.class, boolean.class, boolean.class, boolean.class, Collection.class, Object.class)
+    def user = constructor.newInstance( username,
                                "",
                                enabled,
                                accountNonExpired,
                                credentialsNonExpired,
                                accountNonLocked,
-                               (Collection<GrantedAuthority>)[],
+                               [],
                                id )
     log.trace "finished reading ${user}"
     return user
@@ -248,6 +261,7 @@ public class GrailsUserSerializer extends Serializer<Object> {
 public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Object> {
   
   final static Logger log = Logger.getLogger(UsernamePasswordAuthenticationTokenSerializer.class.getName());
+  def targetClass
 
   public UsernamePasswordAuthenticationTokenSerializer(){
   }
@@ -275,8 +289,9 @@ public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Ob
     def credentials = kryo.readClassAndObject( input )
     def authorities = kryo.readClassAndObject( input )
     def details = kryo.readClassAndObject( input )
-
-    def token = new UsernamePasswordAuthenticationToken(principal,credentials,authorities)
+    
+    def constructor = targetClass.getConstructor(Object.class,Object.class,Collection.class)
+    def token = constructor.newInstance(principal,credentials,authorities)
     token.details = details
 
     log.trace "finished reading UsernamePasswordAuthenticationToken ${token}"  

@@ -28,7 +28,7 @@ import com.granicus.grails.plugins.cookiesession.SecurityContextSessionPersisten
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean
 
 class CookieSessionGrailsPlugin {
-    def version = "2.0.8"
+    def version = "2.0.9"
     def grailsVersion = "1.2.4 > *"
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
@@ -102,7 +102,9 @@ class CookieSessionGrailsPlugin {
           }
 
         if( application.config.grails.plugin.cookiesession.containsKey("springsecuritycompatibility") &&  application.config.grails.plugin.cookiesession["springsecuritycompatibility"] == true )
-          securityContextSessionPersistenceListener(SecurityContextSessionPersistenceListener)
+          securityContextSessionPersistenceListener(SecurityContextSessionPersistenceListener){
+            grailsApplication = ref("grailsApplication")
+          }
 
     }
 
