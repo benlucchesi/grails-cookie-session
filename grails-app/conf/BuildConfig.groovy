@@ -18,7 +18,7 @@ grails.project.dependency.resolution = {
       //compile 'org.objenesis:objenesis:1.3'
       //compile 'de.javakaffee:kryo-serializers:0.22'
 
-      runtime 'com.esotericsoftware.kryo:kryo:2.21'
+      runtime 'com.esotericsoftware.kryo:kryo:2.20'
       runtime 'org.objenesis:objenesis:1.3'
       runtime 'de.javakaffee:kryo-serializers:0.22'
 
