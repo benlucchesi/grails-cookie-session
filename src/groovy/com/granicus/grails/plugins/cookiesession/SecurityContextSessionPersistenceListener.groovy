@@ -22,7 +22,6 @@ package com.granicus.grails.plugins.cookiesession;
 import org.springframework.beans.factory.InitializingBean
 import com.granicus.grails.plugins.cookiesession.SessionPersistenceListener;
 import com.granicus.grails.plugins.cookiesession.SerializableSession;
-import org.springframework.security.web.context.SecurityContextRepository
 
 import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
@@ -32,13 +31,18 @@ public class SecurityContextSessionPersistenceListener implements SessionPersist
 
     final static Logger log = Logger.getLogger(SerializableSession.class.getName());
 
-    String cookieName = "gsession"
+    def grailsApplication
+    def securityContextHolder
 
+    String cookieName = "gsession"
+    
     void afterPropertiesSet(){
       log.trace "afterPropertiesSet()"
       if( ch.config.grails.plugin.cookiesession.containsKey('cookiename') ){
         cookieName = ch.config.grails.plugin.cookiesession.cookiename
       }
+
+      securityContextHolder = grailsApplication.classLoader.loadClass("org.springframework.security.core.context.SecurityContextHolder")
     }
 
     public void afterSessionRestored( SerializableSession session ){
@@ -54,9 +58,9 @@ public class SecurityContextSessionPersistenceListener implements SessionPersist
         }
       }
 
-      if( session.SPRING_SECURITY_CONTEXT != org.springframework.security.core.context.SecurityContextHolder.getContext() ){
+      if( session.SPRING_SECURITY_CONTEXT != securityContextHolder.getContext() ){
         log.info "persisting security context to session"
-        session.SPRING_SECURITY_CONTEXT = org.springframework.security.core.context.SecurityContextHolder.getContext()
+        session.SPRING_SECURITY_CONTEXT = securityContextHolder.getContext()
       }
       else{
         log.trace "not persisting security context"

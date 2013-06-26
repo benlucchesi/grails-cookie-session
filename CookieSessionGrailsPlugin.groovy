@@ -102,7 +102,9 @@ class CookieSessionGrailsPlugin {
           }
 
         if( application.config.grails.plugin.cookiesession.containsKey("springsecuritycompatibility") &&  application.config.grails.plugin.cookiesession["springsecuritycompatibility"] == true )
-          securityContextSessionPersistenceListener(SecurityContextSessionPersistenceListener)
+          securityContextSessionPersistenceListener(SecurityContextSessionPersistenceListener){
+            grailsApplication = ref("grailsApplication")
+          }
 
     }
 
