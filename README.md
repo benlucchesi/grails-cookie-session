@@ -1,7 +1,7 @@
 
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.9
+Current Version: 2.0.11
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -37,7 +37,7 @@ grails install-plugin cookie-session
 
 edit grails/conf/Build.config and add the following line under the plugins closure
 
-  compile ":cookie-session:2.0.10"
+  compile ":cookie-session:2.0.11"
 
 # Configuration
 The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
@@ -111,6 +111,13 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     </tr>
 
     <tr>
+      <td>grails.plugin.cookiesession.setsecure</td>
+      <td>false</td>
+      <td>calls HttpCookie.setSecure on cookie-session cookies. This flag indicates to browsers whether cookies should only be sent over secure connections.</td> 
+    </tr>
+
+
+    <tr>
       <td>grails.plugin.cookiesession.id</td>
       <td><b>deprecated</b></td>
       <td>deprecated. use the 'grails.plugin.cookiesession.cookiename' setting.</td>
@@ -157,6 +164,7 @@ Config.groovy
     grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
     grails.plugin.cookiesession.cookiename = 'gsession'
     grails.plugin.cookiesession.condenseexceptions = false
+    grails.plugin.cookiesession.setsecure = true
     grails.plugin.cookiesession.serializer = 'kryo'
     grails.plugin.cookiesession.springsecuritycompatibility = true
 

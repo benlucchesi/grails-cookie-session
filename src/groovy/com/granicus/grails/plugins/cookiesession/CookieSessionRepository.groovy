@@ -61,6 +61,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   long maxInactiveInterval = 120 * 1000
   int cookieCount = 5
   int maxCookieSize = 2048
+  boolean setSecure = false
   String serializer = "java"
 
   SessionSerializer sessionSerializer = null
@@ -181,6 +182,15 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
     if( maxCookieSize * cookieCount > 6114 ){
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
+    }
+
+    if( ch.config.grails.plugin.cookiesession.containsKey('setsecure') ){
+      setSecure = ch.config.grails.plugin.cookiesession.setsecure?true:false
+      log.info "grails.plugin.cookiesession.setsecure set: \'${encryptCookie}\'"
+    }
+    else{
+      setSecure = false
+      log.info "grails.plugin.cookiesession.setsecure not set. defaulting to \'${setSecure}\'"
     }
 
     if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
@@ -414,7 +424,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     def partitions = splitString(value)
     partitions.eachWithIndex{ it, i ->
       Cookie c = new Cookie( "${cookieName}-${i}".toString(), it?:'')
-      c.setSecure(false)
+      c.setSecure(setSecure)
       c.setPath("/")
       c.maxAge = maxAge
       response.addCookie(c)
@@ -428,7 +438,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     log.trace "deleteCookie()"
     (0..cookieCount).eachWithIndex{ it, i ->
       Cookie c = new Cookie( "${cookieName}-${i}".toString(), '')
-      c.setSecure(false)
+      c.setSecure(setSecure)
       c.setPath("/")
       c.maxAge = 0
       response.addCookie(c)
