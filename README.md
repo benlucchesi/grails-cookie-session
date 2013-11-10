@@ -116,6 +116,30 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>calls HttpCookie.setSecure on cookie-session cookies. This flag indicates to browsers whether cookies should only be sent over secure connections.</td> 
     </tr>
 
+    <tr>
+      <td>grails.plugin.cookiesession.sethttponly</td>
+      <td>false</td>
+      <td>calls Cookie.setHttpOnly on cookie-session cookies. This flag indicates to browsers that the cookie should not be made available to scripts.</td>
+    </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.path</td>
+      <td>/</td>
+      <td>calls Cookie.setPath on cookie-session cookies. This limits the paths for which the browser should send the cookie.</td>
+    </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.domain</td>
+      <td>-unset-</td>
+      <td>calls Cookie.setDomain on cookie-session cookies if set. This tells the browsers which domains the cookie is valid for; if unset, then the cookie is valid for the current host only.</td>
+    </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.comment</td>
+      <td>-unset-</td>
+      <td>calls Cookie.setComment on cookie-session cookies.</td>
+    </tr>
+
 
     <tr>
       <td>grails.plugin.cookiesession.id</td>
@@ -165,6 +189,9 @@ Config.groovy
     grails.plugin.cookiesession.cookiename = 'gsession'
     grails.plugin.cookiesession.condenseexceptions = false
     grails.plugin.cookiesession.setsecure = true
+    grails.plugin.cookiesession.sethttponly = false
+    grails.plugin.cookiesession.path = '/'
+    grails.plugin.cookiesession.comment = 'Acme Session Info'
     grails.plugin.cookiesession.serializer = 'kryo'
     grails.plugin.cookiesession.springsecuritycompatibility = true
 

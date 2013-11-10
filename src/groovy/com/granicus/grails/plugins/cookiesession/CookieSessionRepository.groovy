@@ -62,6 +62,10 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   int cookieCount = 5
   int maxCookieSize = 2048
   boolean setSecure = false
+  boolean setHttpOnly = false
+  String path = "/"
+  String domain = null
+  String comment = null
   String serializer = "java"
 
   SessionSerializer sessionSerializer = null
@@ -191,6 +195,42 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     else{
       setSecure = false
       log.info "grails.plugin.cookiesession.setsecure not set. defaulting to \'${setSecure}\'"
+    }
+
+    if( ch.config.grails.plugin.cookiesession.containsKey('sethttponly') ){
+      setHttpOnly = ch.config.grails.plugin.cookiesession.sethttponly?true:false
+      log.info "grails.plugin.cookiesession.sethttponly set: \'${setHttpOnly}\'"
+    }
+    else{
+      setHttpOnly = false
+      log.info "grails.plugin.cookiesession.sethttponly not set. defaulting to \'${setHttpOnly}\'"
+    }
+
+    if( ch.config.grails.plugin.cookiesession.containsKey('path') ){
+      path = ch.config.grails.plugin.cookiesession.path.trim()
+      log.info "grails.plugin.cookiesession.path set: \'${path}\'"
+    }
+    else{
+      path = "/"
+      log.info "grails.plugin.cookiesession.path not set. defaulting to \'${path}\'"
+    }
+
+    if( ch.config.grails.plugin.cookiesession.containsKey('domain') ){
+      domain = ch.config.grails.plugin.cookiesession.domain.trim()
+      log.info "grails.plugin.cookiesession.domain set: \'${domain}\'"
+    }
+    else{
+      domain = null
+      log.info "grails.plugin.cookiesession.domain not set. defaulting to no domain"
+    }
+
+    if( ch.config.grails.plugin.cookiesession.containsKey('comment') ){
+      comment = ch.config.grails.plugin.cookiesession.comment.trim()
+      log.info "grails.plugin.cookiesession.comment set: \'${comment}\'"
+    }
+    else{
+      comment = null
+      log.info "grails.plugin.cookiesession.comment not set. defaulting to no comment"
     }
 
     if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
@@ -445,7 +485,14 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
     c.maxAge = maxAge
     c.setSecure(setSecure)
-    c.setPath("/")
+    c.setHttpOnly(setHttpOnly)
+    c.setPath(path)
+
+    if (domain)
+      c.setDomain(domain)
+
+    if (comment)
+      c.setComment(comment)
 
     return c
   }
