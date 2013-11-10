@@ -423,10 +423,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
     def partitions = splitString(value)
     partitions.eachWithIndex{ it, i ->
-      Cookie c = new Cookie( "${cookieName}-${i}".toString(), it?:'')
-      c.setSecure(setSecure)
-      c.setPath("/")
-      c.maxAge = maxAge
+      Cookie c = createCookie(i, it?:'', maxAge)
       response.addCookie(c)
       log.trace "added ${cookieName}-${i} to response"
    }
@@ -437,13 +434,20 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   void deleteCookie(HttpServletResponse response){
     log.trace "deleteCookie()"
     (0..cookieCount).eachWithIndex{ it, i ->
-      Cookie c = new Cookie( "${cookieName}-${i}".toString(), '')
-      c.setSecure(setSecure)
-      c.setPath("/")
-      c.maxAge = 0
+      Cookie c = createCookie(i, '', 0)
       response.addCookie(c)
       log.trace "added ${cookieName}-${i} to response with maxAge == 0"
-   }
+    }
+  }
+
+  private Cookie createCookie(int i, String value, int maxAge) {
+    Cookie c = new Cookie( "${cookieName}-${i}".toString(), value)
+
+    c.maxAge = maxAge
+    c.setSecure(setSecure)
+    c.setPath("/")
+
+    return c
   }
 
   boolean isSessionIdValid(String sessionId){
