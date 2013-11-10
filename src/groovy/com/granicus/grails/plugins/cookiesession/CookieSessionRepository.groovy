@@ -186,7 +186,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
     if( ch.config.grails.plugin.cookiesession.containsKey('setsecure') ){
       setSecure = ch.config.grails.plugin.cookiesession.setsecure?true:false
-      log.info "grails.plugin.cookiesession.setsecure set: \'${encryptCookie}\'"
+      log.info "grails.plugin.cookiesession.setsecure set: \'${setSecure}\'"
     }
     else{
       setSecure = false
