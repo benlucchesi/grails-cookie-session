@@ -53,7 +53,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
   <tbody>
     <tr>
       <td>grails.plugin.cookiesession.enabled</td>
-      <td>true</td>
+      <td>false</td>
       <td>enables or disables the cookie session.</td>
     </tr>
     <tr>
