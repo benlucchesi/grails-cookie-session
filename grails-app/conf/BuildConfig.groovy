@@ -26,8 +26,11 @@ grails.project.dependency.resolution = {
 
         build(":release:2.0.4") {
             export = false
+            exclude 'spock'
         }
 
-        compile(":webxml:1.4.1")
+        compile(":webxml:1.4.1"){
+          exclude 'spock'
+        }
     }
 }
