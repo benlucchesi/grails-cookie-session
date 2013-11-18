@@ -17,7 +17,7 @@ grails.project.dependency.resolution = {
       //compile 'com.esotericsoftware.kryo:kryo:2.20' 
       //compile 'org.objenesis:objenesis:1.3'
       //NOTE: don't include the above libraries. kryo-serializers has all needed dependencies
-      compile 'de.javakaffee:kryo-serializers:0.23'
+      compile 'de.javakaffee:kryo-serializers:0.26'
     }
 
     plugins {
@@ -26,8 +26,11 @@ grails.project.dependency.resolution = {
 
         build(":release:2.0.4") {
             export = false
+            exclude 'spock'
         }
 
-        compile(":webxml:1.4.1")
+        compile(":webxml:1.4.1"){
+          exclude 'spock'
+        }
     }
 }
