@@ -72,6 +72,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   String comment
   String serializer = "java"
   Boolean useSessionCookieConfig
+  Boolean useInitializationVector
 
   def sessionCookieConfigMethods = [:]
 
@@ -197,6 +198,9 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     else{
       cryptoKey = new SecretKeySpec(cryptoSecret.bytes, cryptoAlgorithm.split('/')[0])
     }
+  
+    // determine if an initialization vector is needed
+    useInitializationVector = cryptoAlgorithm.indexOf('/') < 0 ? false : cryptoAlgorithm.split('/')[1].toUpperCase() != 'ECB' 
   }
 
   private boolean assignSettingFromConfig(def settingName, def defaultValue, Class t, def targetPropertyName){
@@ -357,15 +361,12 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       cipher.init( Cipher.ENCRYPT_MODE, cryptoKey ) 
       bytes = cipher.doFinal(bytes)
 
-      if( needIV() ){
-        byte[] iv = cipher.getIV()
-
-        byte[] tmp = new byte[1 + iv.length + bytes.length]
-        tmp[0] = iv.length
-        System.arraycopy( iv, 0, tmp, 1, iv.length )
-        System.arraycopy( bytes, 0, tmp, 1 + iv.length, bytes.length )
-
-        bytes = tmp
+      if( useInitializationVector ){
+        def iv = cipher.IV
+        def output = [iv.length]
+        output.addAll(iv)
+        output.addAll(bytes)
+        bytes = output as byte[]
       }
     }
 
@@ -390,7 +391,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
         log.trace "decrypting serialized session from ${input.length} bytes."
         Cipher cipher = Cipher.getInstance(cryptoAlgorithm)
 
-        if( needIV() ){
+        if( useInitializationVector ){
           int ivLen = input[0]
           IvParameterSpec ivSpec = new IvParameterSpec( input, 1, ivLen )
 
@@ -427,14 +428,6 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     log.debug "deserialized session: ${session != null}"
 
     return session 
-  }
-
-  private boolean needIV() {
-    if (cryptoAlgorithm.indexOf('/') < 0)
-      return false      // assuming ECB
-
-    String mode = cryptoAlgorithm.split('/')[1]
-    return (mode.toUpperCase() != 'ECB')
   }
 
   private String[] splitString(String input){
