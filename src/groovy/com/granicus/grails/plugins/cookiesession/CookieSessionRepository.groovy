@@ -34,6 +34,7 @@ import javax.servlet.http.Cookie;
 import java.util.zip.GZIPOutputStream
 import java.util.zip.GZIPInputStream
 
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
@@ -355,6 +356,17 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       Cipher cipher = Cipher.getInstance(cryptoAlgorithm)
       cipher.init( Cipher.ENCRYPT_MODE, cryptoKey ) 
       bytes = cipher.doFinal(bytes)
+
+      if( needIV() ){
+        byte[] iv = cipher.getIV()
+
+        byte[] tmp = new byte[1 + iv.length + bytes.length]
+        tmp[0] = iv.length
+        System.arraycopy( iv, 0, tmp, 1, iv.length )
+        System.arraycopy( bytes, 0, tmp, 1 + iv.length, bytes.length )
+
+        bytes = tmp
+      }
     }
 
     log.trace "base64 encoding serialized session from ${bytes.length} bytes"
@@ -377,8 +389,17 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       if( encryptCookie ){
         log.trace "decrypting serialized session from ${input.length} bytes."
         Cipher cipher = Cipher.getInstance(cryptoAlgorithm)
-        cipher.init( Cipher.DECRYPT_MODE, cryptoKey ) 
-        input = cipher.doFinal(input)
+
+        if( needIV() ){
+          int ivLen = input[0]
+          IvParameterSpec ivSpec = new IvParameterSpec( input, 1, ivLen )
+
+          cipher.init( Cipher.DECRYPT_MODE, cryptoKey, ivSpec )
+          input = cipher.doFinal( input, 1 + ivLen, input.length - 1 - ivLen )
+        } else {
+          cipher.init( Cipher.DECRYPT_MODE, cryptoKey )
+          input = cipher.doFinal(input)
+        }
       }
 
       log.trace "decompressing serialized session from ${input.length} bytes"
@@ -406,6 +427,14 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     log.debug "deserialized session: ${session != null}"
 
     return session 
+  }
+
+  private boolean needIV() {
+    if (cryptoAlgorithm.indexOf('/') < 0)
+      return false      // assuming ECB
+
+    String mode = cryptoAlgorithm.split('/')[1]
+    return (mode.toUpperCase() != 'ECB')
   }
 
   private String[] splitString(String input){
