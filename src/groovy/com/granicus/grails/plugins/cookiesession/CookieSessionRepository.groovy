@@ -41,7 +41,6 @@ import javax.crypto.SealedObject
 import javax.crypto.Cipher
 
 import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
-import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
 import java.util.UUID
 
@@ -55,162 +54,118 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   ApplicationContext applicationContext
   def cryptoKey
 
-  ConfigValue<String> cookieName
   boolean encryptCookie = true
   String cryptoAlgorithm = "Blowfish"
   def cryptoSecret = null
-  long maxInactiveInterval = 120 * 1000
+  
+  long maxInactiveInterval = 120 
+
   int cookieCount = 5
   int maxCookieSize = 2048
-  ConfigValue<Boolean> setSecure
-  ConfigValue<Boolean> setHttpOnly
-  ConfigValue<String> path
-  ConfigValue<String> domain
-  ConfigValue<String> comment
+
+  String cookieName
+  boolean secure
+  Boolean httpOnly
+  String path
+  String domain
+  String comment
   String serializer = "java"
+
+  def sessionCookieConfigMethods = [:]
 
   SessionSerializer sessionSerializer = null
 
-  void afterPropertiesSet(){
-
-    log.trace "afterPropertiesSet()"
+  void configureCookieSessionRepository(){
 
     log.info "configuring CookieSessionRepository"
-   
-    if( ch.config.grails.plugin.cookiesession.containsKey('encryptcookie') ){
-      encryptCookie = ch.config.grails.plugin.cookiesession.encryptcookie?true:false
-      log.info "grails.plugin.cookiesession.encryptcookie set: \'${encryptCookie}\'"
+     
+    def servletContext 
+    def checkSessionCookieConfig = false
+
+    if( applicationContext.containsBean('servletContext') ){
+      servletContext = applicationContext.getBean('servletContext')
+      checkSessionCookieConfig = servletContext.majorVersion >= 3; 
+    }
+
+    assignSettingFromConfig( 'encryptcookie', false, Boolean, 'encryptCookie' )
+    assignSettingFromConfig( 'cryptoalgorithm', 'Blowfish', String, 'cryptoAlgorithm' )
+    assignSettingFromConfig( 'secret', null, String, 'cryptoSecret' )
+    assignSettingFromConfig( 'cookiecount', 5, Integer, 'cookieCount' )
+
+    assignSettingFromConfig('serializer','java',String,'serializer' )
+    if( serializer == "java" ){
+      serializer = "javaSessionSerializer"
+    }
+    else if( serializer == "kryo" ){
+      serializer = "kryoSessionSerializer"
+    }
+    else if( applicationContext.containsBean(serializer) && applicationContext.getType(serializer) instanceof SessionSerializer ){
+
     }
     else{
-      encryptCookie = true
-      log.info "grails.plugin.cookiesession.encryptcookie not set. defaulting to \'${encryptCookie}\'"
+      log.error "no valid serializer configured. defaulting to java"
+      serializer = "javaSessionSerializer"
     }
-
-    if( ch.config.grails.plugin.cookiesession.containsKey('cryptoalgorithm') ){
-      cryptoAlgorithm = ch.config.grails.plugin.cookiesession.cryptoalgorithm.toString()
-      log.info "grails.plugin.cookiesession.cryptoalgorithm set: \'${cryptoAlgorithm}\'"
-    }
-    else{
-      cryptoAlgorithm = "Blowfish"
-      log.info "grails.plugin.cookiesession.cryptoalgorithm not set. defaulting to \'${cryptoAlgorithm}\'"
-    }
-
-    if( ch.config.grails.plugin.cookiesession.containsKey('sessiontimeout') ){
-      maxInactiveInterval = ch.config.grails.plugin.cookiesession.sessiontimeout * 1000
-      if( maxInactiveInterval == -1 ){
-        log.info "config.grails.plugin.cookiesession.sessiontimeout set to -1. sessions will remain active while the user's browser remain open"
-      }
-      else if( maxInactiveInterval > 0 ){
-        log.info "grails.plugin.cookiesession.sessiontimeout set: ${maxInactiveInterval} ms."
-      }
-      else if( maxInactiveInterval <= 0 ){
-        log.warn "config.grails.plugin.cookiesession.sessiontimeout needs to be greater than or equal to zero. defaulting to -1"
-        maxInactiveInterval = -1
-      }
-    }
-    else{
-      maxInactiveInterval = -1
-      log.info "grails.plugin.cookiesession.sessiontimeout not set. defaulting to ${maxInactiveInterval}"
-    }
-
-    cookieName = new ConfigValue(String, 'cookiename', 'name', 'gsession')
-
-    if( ch.config.grails.plugin.cookiesession.containsKey('secret') ){
-      if( ch.config.grails.plugin.cookiesession.secret instanceof byte[] )
-        cryptoSecret = ch.config.grails.plugin.cookiesession.secret
-      else
-        cryptoSecret = ch.config.grails.plugin.cookiesession.secret.bytes
-
-      log.info "grails.plugin.cookiesession.secret set: \'${cryptoSecret.collect{ 'x' }.join()}\'" 
-      if( !encryptCookie )
-        log.warn "grails.plugin.cookiesession.secret is set, but encryptcookie == false. Set encryptcookie to true if you want to encrypt sessions!"
-    }
-    else if( encryptCookie ) {
-      log.warn "Crypto secret is not configured for session repository. A random key will be generated.  Sessions can only be decrypted for this instance of the application. To make session transportable between multiple instances of this application, set the grails.plugin.cookiesession.secret configuration explicitly."
-    }
-
-    if( ch.config.grails.plugin.cookiesession.containsKey('cookiecount') ){
-      cookieCount =  ch.config.grails.plugin.cookiesession.cookiecount
-      log.info "grails.plugin.cookiesession.cookiecount set: ${cookieCount}"
-    }
-    else{
-      cookieCount = 5
-      log.info "grails.plugin.cookiesession.cookiecount not set. defaulting to ${cookieCount}"
-    }
-
-    if( ch.config.grails.plugin.cookiesession.containsKey('serializer') ){
-
-      serializer = ch.config.grails.plugin.cookiesession.serializer
-
-      if( serializer == "java" ){
-        serializer = "javaSessionSerializer"
-      }
-      else if( serializer == "kryo" ){
-        serializer = "kryoSessionSerializer"
-      }
-      else if( applicationContext.containsBean(serializer) && applicationContext.getType(serializer) instanceof SessionSerializer ){
-      }
-      else{
-        log.error "no valid serializer configured. defaulting to java"
-        serializer = "javaSessionSerializer"
-      }
       
-      log.info "grails.plugin.cookiesession.serializer set: ${serializer}"
-    }
-    else{
-      serializer = 'javaSessionSerializer'
-      log.info "grails.plugin.cookiesession.serializer not set. defaulting to java." 
-    }
-
-    if( ch.config.grails.plugin.cookiesession.containsKey('maxcookiesize') ){
-
-      maxCookieSize = ch.config.grails.plugin.cookiesession.maxcookiesize.toInteger()
-
-      if( maxCookieSize < 1024 && maxCookieSize > 4096 ){
+    assignSettingFromConfig( 'maxcookiesize', 2048, Integer, 'maxCookieSize')
+    if( maxCookieSize < 1024 && maxCookieSize > 4096 ){
         maxCookieSize = 2048
         log.info "grails.plugin.cookiesession.maxCookieSize must be between 1024 and 4096. defaulting to 2048"
-      }
-      else{
-        log.info "grails.plugin.cookiesession.maxCookieSize set: ${maxCookieSize}"
-      }
     }
     else{
-      maxCookieSize = 2048
-      log.info "grails.plugin.cookiesession.maxcookiesize no set. defaulting to ${maxCookieSize}"
+        log.info "grails.plugin.cookiesession.maxCookieSize set: ${maxCookieSize}"
     }
 
     if( maxCookieSize * cookieCount > 6114 ){
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
     }
 
-    setSecure = new ConfigValue(Boolean, 'setsecure', 'secure', false)
+    if( !assignSettingFromConfig( 'cookiename', 'gsession', String, 'cookieName') && checkSessionCookieConfig ){
+      assignSettingFromSessionCookieConfig('name', 'cookieName')
+    }
 
-    setHttpOnly = new ConfigValue(Boolean, 'sethttponly', 'httpOnly', false)
+    if( !assignSettingFromConfig( 'setsecure', false, Boolean, 'secure') && checkSessionCookieConfig ){
+      assignSettingFromSessionCookieConfig('secure', 'secure')
+    }
 
-    path = new ConfigValue(String, 'path', 'path', '/')
+    if( !assignSettingFromConfig( 'httponly', false, Boolean, 'httpOnly') && checkSessionCookieConfig ){
+      assignSettingFromSessionCookieConfig( 'httponly', 'httpOnly')
+    }
 
-    domain = new ConfigValue(String, 'domain', 'domain', null)
+    if( !assignSettingFromConfig( 'path', '/', String, 'path') && checkSessionCookieConfig ){
+      assignSettingFromSessionCookieConfig( 'path', 'path' )
+    }
 
-    comment = new ConfigValue(String, 'comment', 'comment', null)
+    if( !assignSettingFromConfig( 'domain', null, String, 'domain') && checkSessionCookieConfig ){
+      assignSettingFromSessionCookieConfig( 'domain', 'domain')
+    }
 
-    if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
-      log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${ch.config.grails.plugin.cookiesession['springsecuritycompatibility']}"
+    if( !assignSettingFromConfig( 'comment', null, String, 'comment') && checkSessionCookieConfig){
+      assignSettingFromSessionCookieConfig( 'comment', 'comment')
+    }
+
+    if( !assignSettingFromConfig( 'sessiontimeout', -1, Long, 'maxInactiveInterval') && checkSessionCookieConfig ){
+      assignSettingFromSessionCookieConfig( 'maxAge', 'maxInactiveInterval') 
+    }
+
+    if( grailsApplication.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
+      log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${grailsApplication.config.grails.plugin.cookiesession['springsecuritycompatibility']}"
     else
       log.info "grails.plugin.cookiesession.springsecuritycompatibility not set. defaulting to false"
 
-    if( ch.config.grails.plugin.cookiesession.containsKey('id') )
+    if( grailsApplication.config.grails.plugin.cookiesession.containsKey('id') )
       log.warn "the grails.plugin.cookiesession.id setting is deprecated! Use the grails.plugin.cookiesession.cookiename setting instead!"
 
-    if( ch.config.grails.plugin.cookiesession.containsKey('timeout') )
+    if( grailsApplication.config.grails.plugin.cookiesession.containsKey('timeout') )
       log.warn "the grails.plugin.cookiesession.timeout setting is deprecated! Use the grails.plugin.cookiesession.sessiontimeout setting instead!" 
 
-    if( ch.config.grails.plugin.cookiesession.hmac.containsKey('secret') )
+    if( grailsApplication.config.grails.plugin.cookiesession.hmac.containsKey('secret') )
       log.warn "the grails.plugin.cookiesession.hmac.secret setting is deprecated! Use the grails.plugin.cookiesession.secret setting instead!"
 
-    if( ch.config.grails.plugin.cookiesession.hmac.containsKey('id') )
+    if( grailsApplication.config.grails.plugin.cookiesession.hmac.containsKey('id') )
       log.warn "the grails.plugin.cookiesession.hmac.id setting is deprecated!"
 
-    if( ch.config.grails.plugin.cookiesession.hmac.containsKey('algorithm') )
+    if( grailsApplication.config.grails.plugin.cookiesession.hmac.containsKey('algorithm') )
       log.warn "the grails.plugin.cookiesession.hmac.algorithm is deprecated! Use the grails.plugin.cookiesession.cryptoalgorithm setting instead!"
 
     // initialize the crypto key
@@ -221,8 +176,71 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       cryptoKey = keyGenerator.generateKey()
     }
     else{
-      cryptoKey = new SecretKeySpec(cryptoSecret, cryptoAlgorithm.split('/')[0])
+      cryptoKey = new SecretKeySpec(cryptoSecret.bytes, cryptoAlgorithm.split('/')[0])
     }
+  }
+
+  private boolean assignSettingFromConfig(def settingName, def defaultValue, Class t, def targetPropertyName){
+    def assignedSetting = false
+    try{
+      def configKey = grailsApplication.config.grails.plugin.cookiesession.find{ k,v -> k.equalsIgnoreCase(settingName) }
+      if( configKey ){
+        this.(targetPropertyName.toString()) = configKey.value.asType(t)
+        log.info "grails.plugin.cookiesession.${configKey.key} set: \'${this.(targetPropertyName.toString())}\'"
+        assignedSetting = true
+      }
+      else{
+        this.(targetPropertyName.toString()) = defaultValue
+        log.info "configuring ${settingName} to default value: ${defaultValue}"
+        return false
+      }
+    }
+    catch( excp ){
+      log.error "error configuring settting '${settingName}'", excp
+      assignedSetting = false
+    }
+
+    return assignedSetting
+  }
+
+  private boolean assignSettingFromSessionCookieConfig(def settingName, def targetPropertyName){
+    def assignedSetting = false
+    def servletContext = applicationContext.getBean('servletContext')
+    def setSetting = servletContext.sessionCookieConfig.metaClass.methods.find{ it.name.equalsIgnoreCase("set${settingName}") }
+    def getSetting = servletContext.sessionCookieConfig.metaClass.methods.find{ it.name.equalsIgnoreCase("get${settingName}") || it.name.equalsIgnoreCase("is${settingName}") }
+
+    if( setSetting && getSetting ){
+      servletContext.sessionCookieConfig.class.metaClass."${setSetting.name}" = { newSettingValue ->
+      try{
+        if( newSettingValue != null ){
+          this.log.trace "detected sessionCookieConfig setting changed: ${newSettingValue}"
+          this.(targetPropertyName.toString()) = newSettingValue
+          setSetting.invoke(servletContext.sessionCookieConfig,newSettingValue)
+        }
+       }
+       catch( excp ){
+        this.log.error "error updating setting from sessionCookieConfig ", excp
+       }
+      }
+   
+      def settingValue = getSetting.invoke(servletContext.sessionCookieConfig)
+      if( settingValue != null ){
+        this.(targetPropertyName.toString()) = getSetting.invoke(servletContext.sessionCookieConfig)
+        log.info "servletContext.sessionCookieConfig.${getSetting.name.replaceFirst('set','')} set: \'${this.(targetPropertyName.toString())}\'"
+        assignedSetting = true
+      }
+    }
+    else{
+      log.warn "unable to find sessionCookieConfig method for ${settingName}"
+      assignedSetting = false
+    }
+
+    return assignedSetting
+  }
+
+  void afterPropertiesSet(){
+    log.trace "afterPropertiesSet()"
+    configureCookieSessionRepository()
   }
 
   SerializableSession restoreSession( HttpServletRequest request ){
@@ -242,6 +260,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
         session = deserializeSession(serializedSession)
       }
 
+      def maxInactiveIntervalMillis = maxInactiveInterval * 1000;
       def currentTime = System.currentTimeMillis()
       def lastAccessedTime = session?.lastAccessedTime?:0
       long inactiveInterval = currentTime - lastAccessedTime 
@@ -251,13 +270,13 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
           log.info "retrieved invalidated session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}.";
           session = null
         }
-        else if( maxInactiveInterval == -1 || inactiveInterval <= maxInactiveInterval ){
+        else if( maxInactiveInterval == -1 || inactiveInterval <= maxInactiveIntervalMillis ){
           log.info "retrieved valid session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}"
           session.isNewSession = false
           session.lastAccessedTime = System.currentTimeMillis()
           session.servletContext = request.servletContext
         }
-        else if( inactiveInterval > maxInactiveInterval ){
+        else if( inactiveInterval > maxInactiveIntervalMillis ){
           log.info "retrieved expired session from cookie. lastAccessedTime: ${new Date(lastAccessedTime)}. expired by ${inactiveInterval} ms.";
           session = null
         }
@@ -268,7 +287,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
     }
     catch( excp ){
-      log.error "An error occurred while restoring session from cookies. A null session will be returned and a new SerializableSession will be created.. Exception follows:\n ${excp}"
+      log.error "An error occurred while restoring session from cookies. A null session will be returned and a new SerializableSession will be created.", excp
       session = null
     }
 
@@ -278,25 +297,16 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   void saveSession( SerializableSession session, HttpServletResponse response ){
     log.trace "saveSession()"
 
-    def cookieConfig = getCookieConfig(session.servletContext)
-
     String serializedSession = serializeSession(session) 
+   
+    def requestCookieCount = cookieCount
+    if( response instanceof SessionRepositoryResponseWrapper )
+      requestCookieCount = response.request?.cookies?.count{ it.name.startsWith(cookieName) } 
 
     if( session.isValid )
-      putDataInCookie(cookieConfig, response, serializedSession )
+      putDataInCookie(response, serializedSession, requestCookieCount )
     else
-      deleteCookie(cookieConfig, response)
-  }
-
-  private def getCookieConfig(ServletContext servletContext) {
-    try {
-        return servletContext.sessionCookieConfig
-    } catch (Exception e) {
-        // handle servlet versions < 3.0
-        if (!(e instanceof MissingPropertyException))
-            log.warn("Error getting session-cookie-config", e);
-        return [:]
-    }
+      deleteCookie(response)
   }
 
   String serializeSession( SerializableSession session ){
@@ -366,9 +376,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       session = sessionSerializer.deserialize(bytes) 
     }
     catch( excp ){
-      log.error "An error occurred while deserializing a session. ${excp}"
-      log.error "cause: ${excp.cause}"
-      excp.printStackTrace()
+      log.error "An error occurred while deserializing a session.", excp
       session = null
     }
 
@@ -411,10 +419,8 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   String getDataFromCookie(HttpServletRequest request){
     log.trace "getDataFromCookie()"
 
-    def cookieConfig = getCookieConfig(request.servletContext)
-
     def values = request.cookies.findAll{ 
-        it.name.startsWith(cookieName.getValue(cookieConfig)) }?.sort{ 
+        it.name.startsWith(cookieName) }?.sort{ 
           it.name.split('-')[1].toInteger() }.collect{ it.value }
    
     String data = combineStrings(values)
@@ -423,53 +429,62 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     return data 
   }
 
-  void putDataInCookie(def cookieConfig, HttpServletResponse response, String value){
+  void putDataInCookie(HttpServletResponse response, String value, def requestCookieCount ){
     log.trace "putDataInCookie() - ${value.size()}"
 
     // the cookie's maxAge will either be -1 or the number of seconds it should live for
-    def maxAge = cookieConfig.maxAge != null ? cookieConfig.maxAge :
-                 maxInactiveInterval == -1 ? maxInactiveInterval : (Integer)(maxInactiveInterval / 1000)
+    // - sessiontimeout config value overrides maxage
 
     if( value.length() > maxCookieSize * cookieCount )
     {
       log.error "Serialized session exceeds maximum session size that can be stored in cookies. Max size: ${maxCookieSize*cookieCount}, Requested Session Size: ${value.length()}."
       throw new Exception("Serialized session exceeded max size.") 
-    }  
+    }
 
     def partitions = splitString(value)
     partitions.eachWithIndex{ it, i ->
-      Cookie c = createCookie(cookieConfig, i, it?:'', maxAge)
-      response.addCookie(c)
-      log.trace "added ${cookieName.getValue(cookieConfig)}-${i} to response"
+      if( it )
+      {
+        Cookie c = createCookie(i, it, maxInactiveInterval ) // if the value of the cookie will be empty, then delete it.. 
+        response.addCookie(c)
+        log.trace "added session ${cookieName}-${i} to response"
+      }
+      else if( i < requestCookieCount )
+      {
+        // create a delete cookie
+        Cookie c = createCookie(i, '', 0) 
+        response.addCookie(c)
+        log.trace "added delete ${cookieName}-${i} to response"
+      }
    }
 
    log.debug "added ${partitions.size()} session cookies to response."
   }
 
-  void deleteCookie(def cookieConfig, HttpServletResponse response){
+  void deleteCookie(HttpServletResponse response){
     log.trace "deleteCookie()"
     (0..cookieCount).eachWithIndex{ it, i ->
-      Cookie c = createCookie(cookieConfig, i, '', 0)
+      Cookie c = createCookie(i, '', 0)
       response.addCookie(c)
-      log.trace "added ${cookieName.getValue(cookieConfig)}-${i} to response with maxAge == 0"
+      log.trace "added ${cookieName}-${i} to response with maxAge == 0"
     }
   }
 
-  private Cookie createCookie(def cookieConfig, int i, String value, int maxAge) {
-    Cookie c = new Cookie( "${cookieName.getValue(cookieConfig)}-${i}".toString(), value)
+  private Cookie createCookie(int i, String value, long m ) {
 
-    c.maxAge = maxAge
-    c.setSecure(setSecure.getValue(cookieConfig))
-    c.setHttpOnly(setHttpOnly.getValue(cookieConfig))
-    c.setPath(path.getValue(cookieConfig))
+    Cookie c = new Cookie( "${cookieName}-${i}".toString(), value)
 
-    String dom = domain.getValue(cookieConfig)
-    if (dom)
-      c.setDomain(dom)
+    c.maxAge = m // maxage overrides class scope variable
+    c.secure = secure
+    c.path = path
+    c.httpOnly = httpOnly
 
-    String cmt = comment.getValue(cookieConfig)
-    if (cmt)
-      c.setComment(cmt)
+    if( domain )
+      c.domain = domain
+    if( comment )
+      c.comment = comment
+
+    log.trace "created cookie name=${c.name}, maxAge=${c.maxAge}, secure=${c.secure}, path=${c.path}, httpOnly=${c.httpOnly}, domain=${c.domain}, comment=${c.comment}"
 
     return c
   }
@@ -477,36 +492,5 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   boolean isSessionIdValid(String sessionId){
     log.trace "isSessionIdValid() : ${sessionId}"
     return true;
-  }
-
-  private static class ConfigValue<T> {
-    private final T value
-    private final boolean fromConfig
-    private final String cookieConfigKey
-
-    public ConfigValue(Class<T> type, String configKey, String cookieConfigKey, T defValue) {
-      if( ch.config.grails.plugin.cookiesession.containsKey(configKey) ){
-        value = ch.config.grails.plugin.cookiesession."$configKey".asType(type)
-        fromConfig = true
-        log.info "grails.plugin.cookiesession.$configKey set: \'${value}\'"
-      }
-      else{
-        value = defValue
-        fromConfig = false
-        log.info "grails.plugin.cookiesession.$configKey not set. defaulting to \'${value}\'"
-      }
-      this.cookieConfigKey = cookieConfigKey
-    }
-
-    T getValue(def cookieConfig) {
-      if (fromConfig)
-        return value
-
-      def val = cookieConfig."$cookieConfigKey"
-      if (val != null)
-        return cookieConfig."$cookieConfigKey"
-
-      return value
-    }
   }
 }
