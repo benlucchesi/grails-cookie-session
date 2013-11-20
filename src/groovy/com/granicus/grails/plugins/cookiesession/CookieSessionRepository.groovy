@@ -64,12 +64,13 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   int maxCookieSize = 2048
 
   String cookieName
-  boolean secure
+  Boolean secure
   Boolean httpOnly
   String path
   String domain
   String comment
   String serializer = "java"
+  Boolean useSessionCookieConfig
 
   def sessionCookieConfigMethods = [:]
 
@@ -80,11 +81,20 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     log.info "configuring CookieSessionRepository"
      
     def servletContext 
-    def checkSessionCookieConfig = false
 
-    if( applicationContext.containsBean('servletContext') ){
-      servletContext = applicationContext.getBean('servletContext')
-      checkSessionCookieConfig = servletContext.majorVersion >= 3; 
+    assignSettingFromConfig( 'useSessionCookieConfig', false, Boolean, 'useSessionCookieConfig' )
+    if( useSessionCookieConfig ){
+      if( applicationContext.containsBean('servletContext') ){
+        servletContext = applicationContext.getBean('servletContext')
+        if( servletContext.majorVersion < 3 ){
+          useSessionCookieConfig = false
+        }
+      }
+      else
+        useSessionCookieConfig = false;
+   
+      if( useSessionCookieConfig == false )
+        log.warn "useSessionCookieConfig was enabled in the config file, but has been disabled because the servlet does not support SessionCookieConfig."  
     }
 
     assignSettingFromConfig( 'encryptcookie', false, Boolean, 'encryptCookie' )
@@ -115,39 +125,47 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     else{
         log.info "grails.plugin.cookiesession.maxCookieSize set: ${maxCookieSize}"
     }
-
+    
     if( maxCookieSize * cookieCount > 6114 ){
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
     }
 
-    if( !assignSettingFromConfig( 'cookiename', 'gsession', String, 'cookieName') && checkSessionCookieConfig ){
-      assignSettingFromSessionCookieConfig('name', 'cookieName')
-    }
+    if( useSessionCookieConfig )
+      assignSettingFromSessionCookieConfig('name', 'gsession', 'cookieName')
+    else
+      assignSettingFromConfig( 'cookiename', 'gsession', String, 'cookieName')
 
-    if( !assignSettingFromConfig( 'setsecure', false, Boolean, 'secure') && checkSessionCookieConfig ){
-      assignSettingFromSessionCookieConfig('secure', 'secure')
-    }
+    if( useSessionCookieConfig )
+      assignSettingFromSessionCookieConfig('secure', false, 'secure')
+    else
+      assignSettingFromConfig( 'setsecure', false, Boolean, 'secure')
 
-    if( !assignSettingFromConfig( 'httponly', false, Boolean, 'httpOnly') && checkSessionCookieConfig ){
-      assignSettingFromSessionCookieConfig( 'httponly', 'httpOnly')
-    }
+    if( useSessionCookieConfig )
+      assignSettingFromSessionCookieConfig( 'httponly',false, 'httpOnly')
+    else
+      assignSettingFromConfig( 'httponly', false, Boolean, 'httpOnly')
 
-    if( !assignSettingFromConfig( 'path', '/', String, 'path') && checkSessionCookieConfig ){
-      assignSettingFromSessionCookieConfig( 'path', 'path' )
-    }
+    if( useSessionCookieConfig )
+      assignSettingFromSessionCookieConfig( 'path', '/', 'path' )
+    else
+      assignSettingFromConfig( 'path', '/', String, 'path')
 
-    if( !assignSettingFromConfig( 'domain', null, String, 'domain') && checkSessionCookieConfig ){
-      assignSettingFromSessionCookieConfig( 'domain', 'domain')
-    }
+    if( useSessionCookieConfig )
+      assignSettingFromSessionCookieConfig( 'domain', null, 'domain')
+    else
+      assignSettingFromConfig( 'domain', null, String, 'domain')
 
-    if( !assignSettingFromConfig( 'comment', null, String, 'comment') && checkSessionCookieConfig){
-      assignSettingFromSessionCookieConfig( 'comment', 'comment')
-    }
+    if( useSessionCookieConfig )
+      assignSettingFromSessionCookieConfig( 'comment', null, 'comment')
+    else
+      assignSettingFromConfig( 'comment', null, String, 'comment')
 
-    if( !assignSettingFromConfig( 'sessiontimeout', -1, Long, 'maxInactiveInterval') && checkSessionCookieConfig ){
-      assignSettingFromSessionCookieConfig( 'maxAge', 'maxInactiveInterval') 
-    }
+    if( useSessionCookieConfig )
+      assignSettingFromSessionCookieConfig( 'maxAge', -1, 'maxInactiveInterval') 
+    else
+      assignSettingFromConfig( 'sessiontimeout', -1, Long, 'maxInactiveInterval')
 
+    
     if( grailsApplication.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
       log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${grailsApplication.config.grails.plugin.cookiesession['springsecuritycompatibility']}"
     else
@@ -203,7 +221,8 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     return assignedSetting
   }
 
-  private boolean assignSettingFromSessionCookieConfig(def settingName, def targetPropertyName){
+  private boolean assignSettingFromSessionCookieConfig(def settingName, def defaultValue, def targetPropertyName){
+
     def assignedSetting = false
     def servletContext = applicationContext.getBean('servletContext')
     def setSetting = servletContext.sessionCookieConfig.metaClass.methods.find{ it.name.equalsIgnoreCase("set${settingName}") }
@@ -228,6 +247,10 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
         this.(targetPropertyName.toString()) = getSetting.invoke(servletContext.sessionCookieConfig)
         log.info "servletContext.sessionCookieConfig.${getSetting.name.replaceFirst('set','')} set: \'${this.(targetPropertyName.toString())}\'"
         assignedSetting = true
+      }
+      else{
+        this.(targetPropertyName.toString()) = defaultValue
+        log.info "configuring ${settingName} to default value: ${defaultValue}"
       }
     }
     else{
