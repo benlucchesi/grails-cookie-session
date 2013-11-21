@@ -1,7 +1,7 @@
 
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.11
+Current Version: 2.0.12
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -37,7 +37,7 @@ grails install-plugin cookie-session
 
 edit grails/conf/Build.config and add the following line under the plugins closure
 
-  compile ":cookie-session:2.0.11"
+  compile ":cookie-session:2.0.12"
 
 # Configuration
 The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
@@ -64,7 +64,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     <tr>
       <td>grails.plugin.cookiesession.cryptoalgorithm</td>
       <td>Blowfish</td>
-      <td>The cryptographic algorithm used to encrypt session data (i.e. Blowfish, DES, DESEde, AES). NOTE: the secret must be compatible with the crypto algorithm.</td>
+      <td>The cryptographic algorithm used to encrypt session data (i.e. Blowfish, DES, DESEde, AES). NOTE: the secret must be compatible with the crypto algorithm. Version 2.0.12 supports non-ECB cipher modes, such as 'Blowfish/CBC/PKCS5Padding', that require an initialization vector</td>
     </tr>
     <tr>
       <td>grails.plugin.cookiesession.secret</td>
@@ -105,6 +105,12 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     </tr>
 
     <tr>
+      <td>grails.plugin.cookiesession.usesessioncookieconfig</td>
+      <td>false</td>
+      <td>version 2.0.12+ uses the ServletContext.SessionCookieConfig to configure cookies used to store the session. values from SessionCookieConfig override config parameters setsecure, sethttp, path, domain, comment, sessiontimeout, and cookiename. See notes below on use of this config option.</td> 
+    </tr>
+
+    <tr>
       <td>grails.plugin.cookiesession.springsecuritycompatibility</td>
       <td>false</td>
       <td>true to configure enhanced compatibility with spring security, false to disable.</td> 
@@ -114,6 +120,30 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>grails.plugin.cookiesession.setsecure</td>
       <td>false</td>
       <td>calls HttpCookie.setSecure on cookie-session cookies. This flag indicates to browsers whether cookies should only be sent over secure connections.</td> 
+    </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.sethttponly</td>
+      <td>false</td>
+      <td>calls Cookie.setHttpOnly on cookie-session cookies. This flag indicates to browsers that the cookie should not be made available to scripts.</td>
+    </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.path</td>
+      <td>/</td>
+      <td>calls Cookie.setPath on cookie-session cookies. This limits the paths for which the browser should send the cookie.</td>
+    </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.domain</td>
+      <td>-unset-</td>
+      <td>calls Cookie.setDomain on cookie-session cookies if set. This tells the browsers which domains the cookie is valid for; if unset, then the cookie is valid for the current host only.</td>
+    </tr>
+
+    <tr>
+      <td>grails.plugin.cookiesession.comment</td>
+      <td>-unset-</td>
+      <td>calls Cookie.setComment on cookie-session cookies.</td>
     </tr>
 
 
@@ -165,6 +195,9 @@ Config.groovy
     grails.plugin.cookiesession.cookiename = 'gsession'
     grails.plugin.cookiesession.condenseexceptions = false
     grails.plugin.cookiesession.setsecure = true
+    grails.plugin.cookiesession.sethttponly = false
+    grails.plugin.cookiesession.path = '/'
+    grails.plugin.cookiesession.comment = 'Acme Session Info'
     grails.plugin.cookiesession.serializer = 'kryo'
     grails.plugin.cookiesession.springsecuritycompatibility = true
 
@@ -261,6 +294,24 @@ For examples of how to implement a SessionSerializer, see the implementations of
 
 ## Spring Security Compatibility (version 2.0.7+)
 Spring Security Compatibility, configured with the springsecuritycompatibility setting, directs the cookie-session plugin to adjust its behavior to be more compatible with thespring-security-core plugin. The primary issue addressed in this mode relates to when the spring-security core's SecurityContextPersistenceFilter writes the current security context to the SecurityContextRepository. In most cases, the SecurityContextPersistenceFilter stores the current security context after the current web response has been written. This is a problem for the cookie-session plugin because the session is stored in cookies in the web response. As a result, the current security context is never saved in the session, in effect losing the security context after each request. To work around this issue, spring security compatibility mode causes the cookie-session plugin to write the current security context to the session just before the session is serialized and saved in cookies. The security context is stored under the key that the SecurityContextRepository expects to find the security context. The next issue that Spring Security Compatibility addresses involves cookies saved in the DefaultSavedRequest. DefaultSavedRequest is created by spring security core and stored in the session during redirects, such as after authentication. Spring Security Compatibility causes the cookie-sessino plugin to detect the presense of a DefaultSavedRequest in the session and remove any cookie-session cookies it may be storing. This ensures that old session information doesn't replace more current session information when following a redirects. This also reduces the size of the the serialized session because the DefaultSavedRequest is storing an old copy of a session in the current session. Finally, Spring Security Compatibility adds custom kryo serializers (when kryo serialization is enabled) to successfully serialize objects that kryo isn't capable of serializing by default.
+
+## use of SessionCookieConfig
+SessionCookieConfig is a interface introduced in Servlet 3.0 and is used to specify configuration parameters of session cookies. If you enable the grails.plugin.cookiesession.usesessioncookieconfig parameter, then this interface is used to configure the cookie session cookies. In order for this option to work, the servlet context must be servlet context version 3.0 or great. 
+
+The following is an example of how to use the SessionCookieConfig to configure cookies in the init closure in BootStrap.groovy.
+
+        if( servletContext.majorVersion >= 3 ){
+          servletContext.sessionCookieConfig.name = 'sugar2'
+          servletContext.sessionCookieConfig.secure = false
+          servletContext.sessionCookieConfig.maxAge = 3600
+        }
+
+## WARNING on updating cookie specifications and general recomendations
+Be warned, updating the cookie specification can cause unexpected results and cause your application to fail. In general, you should not update the cookie specification once an application is in production. If you do, mutliple cookies with the same name will be saved back to the browser and will be sent back to your application, which will undoubtably cause deserialization of the session cookie to fail. Here are some general recomendations on how to configure cookie session cookie, either with the plugin's configuration options or with the SessionCookieConfig:
+
+  *   Always configure a reasonable timeout so that in the event that duplicate cookies are created, they'll be cleared from the browser automatically
+  *   Use a unique cookie name for each application. If you run multiple applications under the same domain, this will ensure that cookies between applications don't conflict with one-another, unless you intend to share sessions between applications. In that case, make sure cookies are configured EXACTLY the same.
+  *   Avoid changing the cookie configuration after an application is production. Be aware that any browser storing cookie session cookies that haven't expired will like get duplicate cookie names and experience errors the next time they access the site. This can be avoided by having a short session timeout or by renaming the cookie, in which case ALL existing sessions will be lost.
 
 ## Logging
 
