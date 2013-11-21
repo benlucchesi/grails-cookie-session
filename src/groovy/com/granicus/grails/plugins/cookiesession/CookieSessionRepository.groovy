@@ -34,6 +34,7 @@ import javax.servlet.http.Cookie;
 import java.util.zip.GZIPOutputStream
 import java.util.zip.GZIPInputStream
 
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
@@ -71,6 +72,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   String comment
   String serializer = "java"
   Boolean useSessionCookieConfig
+  Boolean useInitializationVector
 
   def sessionCookieConfigMethods = [:]
 
@@ -196,6 +198,9 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     else{
       cryptoKey = new SecretKeySpec(cryptoSecret.bytes, cryptoAlgorithm.split('/')[0])
     }
+  
+    // determine if an initialization vector is needed
+    useInitializationVector = cryptoAlgorithm.indexOf('/') < 0 ? false : cryptoAlgorithm.split('/')[1].toUpperCase() != 'ECB' 
   }
 
   private boolean assignSettingFromConfig(def settingName, def defaultValue, Class t, def targetPropertyName){
@@ -355,6 +360,14 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       Cipher cipher = Cipher.getInstance(cryptoAlgorithm)
       cipher.init( Cipher.ENCRYPT_MODE, cryptoKey ) 
       bytes = cipher.doFinal(bytes)
+
+      if( useInitializationVector ){
+        def iv = cipher.IV
+        def output = [iv.length]
+        output.addAll(iv)
+        output.addAll(bytes)
+        bytes = output as byte[]
+      }
     }
 
     log.trace "base64 encoding serialized session from ${bytes.length} bytes"
@@ -377,8 +390,17 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       if( encryptCookie ){
         log.trace "decrypting serialized session from ${input.length} bytes."
         Cipher cipher = Cipher.getInstance(cryptoAlgorithm)
-        cipher.init( Cipher.DECRYPT_MODE, cryptoKey ) 
-        input = cipher.doFinal(input)
+
+        if( useInitializationVector ){
+          int ivLen = input[0]
+          IvParameterSpec ivSpec = new IvParameterSpec( input, 1, ivLen )
+
+          cipher.init( Cipher.DECRYPT_MODE, cryptoKey, ivSpec )
+          input = cipher.doFinal( input, 1 + ivLen, input.length - 1 - ivLen )
+        } else {
+          cipher.init( Cipher.DECRYPT_MODE, cryptoKey )
+          input = cipher.doFinal(input)
+        }
       }
 
       log.trace "decompressing serialized session from ${input.length} bytes"
