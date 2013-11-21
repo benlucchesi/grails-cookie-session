@@ -53,7 +53,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
   <tbody>
     <tr>
       <td>grails.plugin.cookiesession.enabled</td>
-      <td>true</td>
+      <td>false</td>
       <td>enables or disables the cookie session.</td>
     </tr>
     <tr>
@@ -119,7 +119,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     <tr>
       <td>grails.plugin.cookiesession.setsecure</td>
       <td>false</td>
-      <td>calls HttpCookie.setSecure on cookie-session cookies. This flag indicates to browsers whether cookies should only be sent over secure connections.</td> 
+      <td>calls Cookie.setSecure on cookie-session cookies. This flag indicates to browsers whether cookies should only be sent over secure connections.</td> 
     </tr>
 
     <tr>
