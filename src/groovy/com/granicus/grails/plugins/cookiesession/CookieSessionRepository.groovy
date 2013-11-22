@@ -168,6 +168,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     if( cryptoSecretConfig ){
       if( cryptoSecretConfig.value instanceof byte[] ){
         cryptoSecret = cryptoSecretConfig.value 
+        log.trace "grails.plugin.cookiesession.secret set with byte[]"
       }
       else if( cryptoSecretConfig.value instanceof String ){
         cryptoSecret = cryptoSecretConfig.value.bytes
@@ -179,9 +180,6 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       }
     }
     
-    log.trace "cryptoSecret: ${cryptoSecret}"
-
-
     assignSettingFromConfig( 'cookiecount', 5, Integer, 'cookieCount' )
 
     assignSettingFromConfig('serializer','java',String,'serializer' )
