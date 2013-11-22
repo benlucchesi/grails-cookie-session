@@ -99,9 +99,87 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
         log.warn "useSessionCookieConfig was enabled in the config file, but has been disabled because the servlet does not support SessionCookieConfig."  
     }
 
+    // if useSessionCookieConfig, then attach to invokeMethod and setProperty so that the values can be intercepted and assigned to local variables
+    if( useSessionCookieConfig ){
+
+      servletContext.sessionCookieConfig.class.metaClass.invokeMethod = { String method, args ->
+        switch( method ){
+          case 'setName':
+            this.cookieName = args[0]
+            break
+          case 'setHttpOnly':
+            this.httpOnly = args[0]
+            break
+          case 'setSecure':
+            this.secure = args[0]
+            break
+          case 'setPath':
+            this.path = args[0]
+            break
+          case 'setDomain':
+            this.domain = args[0]
+            break
+          case 'setComment':
+            this.comment = args[0]
+            break
+          case 'setMaxAge':
+            this.maxInactiveInterval = args[0]
+            break
+        }
+
+        servletContext.sessionCookieConfig.metaClass.methods.find{ it.name == method }?.invoke( servletContext.sessionCookieConfig, args )
+        log.trace "detected sessionCookieConfig.${method} -> ${args}"
+      }
+
+      servletContext.sessionCookieConfig.class.metaClass.setProperty = { String property, value ->
+        switch( property ){
+          case 'name':
+            this.cookieName = value
+            break
+          case 'httpOnly':
+            this.httpOnly = value
+            break
+          case 'secure':
+            this.secure = value
+            break
+          case 'path':
+            this.path = value
+            break
+          case 'domain':
+            this.domain = value
+            break
+          case 'comment':
+            this.comment = value
+            break
+          case 'maxAge':
+            this.maxInactiveInterval = value
+            break
+        }
+
+        servletContext.sessionCookieConfig.metaClass.properties.find{ it.name == property }.setProperty( servletContext.sessionCookieConfig, value )
+        log.trace "detected sessionCookieConfig.${property} -> ${value}"
+      }
+    }
+
     assignSettingFromConfig( 'encryptcookie', false, Boolean, 'encryptCookie' )
     assignSettingFromConfig( 'cryptoalgorithm', 'Blowfish', String, 'cryptoAlgorithm' )
-    assignSettingFromConfig( 'secret', null, String, 'cryptoSecret' )
+    
+    def cryptoSecretConfig = grailsApplication.config.grails.plugin.cookiesession.find{ k,v -> k.equalsIgnoreCase('secret') }
+    if( cryptoSecretConfig ){
+      if( cryptoSecretConfig.value instanceof byte[] ){
+        cryptoSecret = cryptoSecretConfig.value 
+        log.trace "grails.plugin.cookiesession.secret set with byte[]"
+      }
+      else if( cryptoSecretConfig.value instanceof String ){
+        cryptoSecret = cryptoSecretConfig.value.bytes
+        log.trace "grails.plugin.cookiesession.secret set with String.bytes"
+      }
+      else if( cryptoSecretConfig.value instanceof ArrayList ){
+        cryptoSecret = cryptoSecretConfig.value as byte[]
+        log.trace "grails.plugin.cookiesession.secret set with ArrayList as byte[]"
+      }
+    }
+    
     assignSettingFromConfig( 'cookiecount', 5, Integer, 'cookieCount' )
 
     assignSettingFromConfig('serializer','java',String,'serializer' )
@@ -131,42 +209,25 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     if( maxCookieSize * cookieCount > 6114 ){
       log.warn "the maxcookiesize and cookiecount settings will allow for a max session size of ${maxCookieSize*cookieCount} bytes. Make sure you increase the max http header size in order to support this configuration. see the help file for this plugin for instructions."
     }
+  
+    assignSettingFromConfig( 'cookiename', 'gsession', String, 'cookieName')
+    assignSettingFromConfig( 'setsecure', false, Boolean, 'secure')
+    assignSettingFromConfig( 'httponly', false, Boolean, 'httpOnly')
+    assignSettingFromConfig( 'path', '/', String, 'path')
+    assignSettingFromConfig( 'domain', null, String, 'domain')
+    assignSettingFromConfig( 'comment', null, String, 'comment')
+    assignSettingFromConfig( 'sessiontimeout', -1, Long, 'maxInactiveInterval')
 
-    if( useSessionCookieConfig )
-      assignSettingFromSessionCookieConfig('name', 'gsession', 'cookieName')
-    else
-      assignSettingFromConfig( 'cookiename', 'gsession', String, 'cookieName')
-
-    if( useSessionCookieConfig )
-      assignSettingFromSessionCookieConfig('secure', false, 'secure')
-    else
-      assignSettingFromConfig( 'setsecure', false, Boolean, 'secure')
-
-    if( useSessionCookieConfig )
-      assignSettingFromSessionCookieConfig( 'httponly',false, 'httpOnly')
-    else
-      assignSettingFromConfig( 'httponly', false, Boolean, 'httpOnly')
-
-    if( useSessionCookieConfig )
-      assignSettingFromSessionCookieConfig( 'path', '/', 'path' )
-    else
-      assignSettingFromConfig( 'path', '/', String, 'path')
-
-    if( useSessionCookieConfig )
-      assignSettingFromSessionCookieConfig( 'domain', null, 'domain')
-    else
-      assignSettingFromConfig( 'domain', null, String, 'domain')
-
-    if( useSessionCookieConfig )
-      assignSettingFromSessionCookieConfig( 'comment', null, 'comment')
-    else
-      assignSettingFromConfig( 'comment', null, String, 'comment')
-
-    if( useSessionCookieConfig )
-      assignSettingFromSessionCookieConfig( 'maxAge', -1, 'maxInactiveInterval') 
-    else
-      assignSettingFromConfig( 'sessiontimeout', -1, Long, 'maxInactiveInterval')
-
+    if( useSessionCookieConfig ){
+      this.cookieName = servletContext.sessionCookieConfig.name ?: cookieName
+      this.httpOnly =  servletContext.sessionCookieConfig.httpOnly ?: secure
+      this.secure = servletContext.sessionCookieConfig.secure ?: secure
+      this.path = servletContext.sessionCookieConfig.path ?: path
+      this.domain = servletContext.sessionCookieConfig.domain ?: domain
+      this.comment = servletContext.sessionCookieConfig.comment ?: comment
+      this.maxInactiveInterval = servletContext.sessionCookieConfig.maxAge ?: maxInactiveInterval
+      log.trace "processed sessionCookieConfig. cookie settings are: [name: ${cookieName}, httpOnly: ${httpOnly}, secure: ${secure}, path: ${path}, domain: ${domain}, comment: ${comment}, maxAge: ${maxInactiveInterval}]" 
+    }
     
     if( grailsApplication.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') )
       log.info "grails.plugin.cookiesession.springsecuritycompatibility set: ${grailsApplication.config.grails.plugin.cookiesession['springsecuritycompatibility']}"
@@ -196,7 +257,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
       cryptoKey = keyGenerator.generateKey()
     }
     else{
-      cryptoKey = new SecretKeySpec(cryptoSecret.bytes, cryptoAlgorithm.split('/')[0])
+      cryptoKey = new SecretKeySpec(cryptoSecret, cryptoAlgorithm.split('/')[0])
     }
   
     // determine if an initialization vector is needed
@@ -220,46 +281,6 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     }
     catch( excp ){
       log.error "error configuring settting '${settingName}'", excp
-      assignedSetting = false
-    }
-
-    return assignedSetting
-  }
-
-  private boolean assignSettingFromSessionCookieConfig(def settingName, def defaultValue, def targetPropertyName){
-
-    def assignedSetting = false
-    def servletContext = applicationContext.getBean('servletContext')
-    def setSetting = servletContext.sessionCookieConfig.metaClass.methods.find{ it.name.equalsIgnoreCase("set${settingName}") }
-    def getSetting = servletContext.sessionCookieConfig.metaClass.methods.find{ it.name.equalsIgnoreCase("get${settingName}") || it.name.equalsIgnoreCase("is${settingName}") }
-
-    if( setSetting && getSetting ){
-      servletContext.sessionCookieConfig.class.metaClass."${setSetting.name}" = { newSettingValue ->
-      try{
-        if( newSettingValue != null ){
-          this.log.trace "detected sessionCookieConfig setting changed: ${newSettingValue}"
-          this.(targetPropertyName.toString()) = newSettingValue
-          setSetting.invoke(servletContext.sessionCookieConfig,newSettingValue)
-        }
-       }
-       catch( excp ){
-        this.log.error "error updating setting from sessionCookieConfig ", excp
-       }
-      }
-   
-      def settingValue = getSetting.invoke(servletContext.sessionCookieConfig)
-      if( settingValue != null ){
-        this.(targetPropertyName.toString()) = getSetting.invoke(servletContext.sessionCookieConfig)
-        log.info "servletContext.sessionCookieConfig.${getSetting.name.replaceFirst('set','')} set: \'${this.(targetPropertyName.toString())}\'"
-        assignedSetting = true
-      }
-      else{
-        this.(targetPropertyName.toString()) = defaultValue
-        log.info "configuring ${settingName} to default value: ${defaultValue}"
-      }
-    }
-    else{
-      log.warn "unable to find sessionCookieConfig method for ${settingName}"
       assignedSetting = false
     }
 
