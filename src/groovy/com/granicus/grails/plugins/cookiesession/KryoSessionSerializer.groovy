@@ -103,7 +103,7 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
       usernamePasswordAuthenticationTokenClass = grailsApplication.classLoader.loadClass(
         "org.springframework.security.authentication.UsernamePasswordAuthenticationToken")
       grantedAuthorityImplClass = grailsApplication.classLoader.loadClass("org.springframework.security.core.authority.GrantedAuthorityImpl")
-      grailsUserClass = grailsApplication.classLoader.loadClass("org.codehaus.groovy.grails.plugins.springsecurity.GrailsUser")
+      grailsUserClass = grailsApplication.classLoader.loadClass("grails.plugin.springsecurity.userdetails.GrailsUser")
 
       def grantedAuthorityImplSerializer = new GrantedAuthorityImplSerializer()
       grantedAuthorityImplSerializer.targetClass = grantedAuthorityImplClass
