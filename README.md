@@ -1,4 +1,3 @@
-
 # Cookie Session Grails Plugin
 
 Current Version: 2.0.13
@@ -35,7 +34,7 @@ grails install-plugin cookie-session
 
   or
 
-edit grails/conf/Build.config and add the following line under the plugins closure
+edit grails/conf/BuildConfig.groovy and add the following line under the plugins closure
 
   compile ":cookie-session:2.0.13"
 
