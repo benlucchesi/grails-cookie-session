@@ -34,7 +34,7 @@ grails install-plugin cookie-session
 
   or
 
-edit grails/conf/BuildConfig.groovy and add the following line under the plugins closure
+edit grails-app/conf/BuildConfig.groovy and add the following line under the plugins closure
 
   compile ":cookie-session:2.0.13"
 
