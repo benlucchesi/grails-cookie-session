@@ -262,6 +262,12 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   
     // determine if an initialization vector is needed
     useInitializationVector = cryptoAlgorithm.indexOf('/') < 0 ? false : cryptoAlgorithm.split('/')[1].toUpperCase() != 'ECB' 
+
+
+    // check to see if spring security's sessionfixationprevention is turned on
+    if( grailsApplication.config.grails.plugin.springsecurity.useSessionFixationPrevention == true ){
+      log.error "grails.plugin.springsecurity.useSessionFixationPrevention == true. Spring Security Session Fixation Prevention is incompatible with cookie session plugin. Your application will experience unexpected behavior."
+    }
   }
 
   private boolean assignSettingFromConfig(def settingName, def defaultValue, Class t, def targetPropertyName){
