@@ -28,7 +28,7 @@ import com.granicus.grails.plugins.cookiesession.SecurityContextSessionPersisten
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalSessionFactoryBean
 
 class CookieSessionGrailsPlugin {
-    def version = "2.0.13"
+    def version = "2.0.14"
     def grailsVersion = "1.2.4 > *"
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
