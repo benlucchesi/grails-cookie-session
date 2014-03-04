@@ -47,18 +47,22 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
 
   boolean springSecurityCompatibility = false
 
-  def usernamePasswordAuthenticationTokenClass
-  def grantedAuthorityImplClass
-  def grailsUserClass
+  def springSecurityPluginVersion
+
+  
 
   void afterPropertiesSet(){
       log.trace "bean properties set, performing bean configuring bean"
 
       if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') ){
         springSecurityCompatibility = ch.config.grails.plugin.cookiesession['springsecuritycompatibility']?true:false
+        springSecurityPluginVersion = grailsApplication.mainContext.getBean('pluginManager').allPlugins.find{ it.name == "springSecurityCore" }.version
       }
       
       log.trace "Kryo serializer configured for spring security compatibility: ${springSecurityCompatibility}"
+      if( springSecurityCompatibility ){
+        log.trace "Kryo serializer detected spring security plugin version: ${springSecurityPluginVersion}"
+      }
   }
 
   public byte[] serialize(SerializableSession session){
@@ -86,9 +90,13 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
   }
 
   private def getConfiguredKryoSerializer(){
+
+    
     log.trace "configuring kryo serializer"
+
     def kryo = new Kryo()
 
+    
     // register fieldserializer for GrailsFlashScope
     def flashScopeSerializer = new FieldSerializer(kryo, GrailsFlashScope.class);
     kryo.register(GrailsFlashScope.class,flashScopeSerializer)
@@ -96,19 +104,38 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
 
     def localeSerializer = new LocaleSerializer()
     kryo.register(java.util.Locale.class,localeSerializer)
-    log.trace "registered LocaleSerializer"
 
     if( springSecurityCompatibility ){
+      
+      def grailsUserClass
 
-      usernamePasswordAuthenticationTokenClass = grailsApplication.classLoader.loadClass(
-        "org.springframework.security.authentication.UsernamePasswordAuthenticationToken")
-      grantedAuthorityImplClass = grailsApplication.classLoader.loadClass("org.springframework.security.core.authority.GrantedAuthorityImpl")
-      grailsUserClass = grailsApplication.classLoader.loadClass("org.codehaus.groovy.grails.plugins.springsecurity.GrailsUser")
+      def usernamePasswordAuthenticationTokenClass = grailsApplication.classLoader.loadClass("org.springframework.security.authentication.UsernamePasswordAuthenticationToken")
+      def grantedAuthorityImplClass = grailsApplication.classLoader.loadClass("org.springframework.security.core.authority.GrantedAuthorityImpl")
+     
+      if( springSecurityPluginVersion[0].toInteger() >= 2 ){
+        grailsUserClass = grailsApplication.classLoader.loadClass("grails.plugin.springsecurity.userdetails.GrailsUser")
+        
+        def simpleGrantedAuthorityClass = grailsApplication.classLoader.loadClass("org.springframework.security.core.authority.SimpleGrantedAuthority")
+        def simpleGrantedAuthoritySerializer = new SimpleGrantedAuthoritySerializer()
+        simpleGrantedAuthoritySerializer.targetClass = simpleGrantedAuthorityClass
+        kryo.register(simpleGrantedAuthorityClass,simpleGrantedAuthoritySerializer)
+        log.trace "registered SimpleGrantedAuthority serializer"
+      }
+      else{
+        grailsUserClass = grailsApplication.classLoader.loadClass("org.codehaus.groovy.grails.plugins.springsecurity.GrailsUser")
+      }
+
+      def userClass = grailsApplication.classLoader.loadClass("org.springframework.security.core.userdetails.User")
 
       def grantedAuthorityImplSerializer = new GrantedAuthorityImplSerializer()
       grantedAuthorityImplSerializer.targetClass = grantedAuthorityImplClass
       kryo.register(grantedAuthorityImplClass,grantedAuthorityImplSerializer)
       log.trace "registered GratedAuthorityImpl serializer"
+
+      def userSerializer = new UserSerializer()
+      userSerializer.targetClass = userClass 
+      kryo.register(userClass,userSerializer)
+      log.trace "registered User serializer"
 
       def grailsUserSerializer = new GrailsUserSerializer()
       grailsUserSerializer.targetClass = grailsUserClass
@@ -174,6 +201,40 @@ public class LocaleSerializer extends Serializer<java.util.Locale> {
   }
 }
 
+public class SimpleGrantedAuthoritySerializer extends Serializer<Object> {
+
+  final static Logger log = Logger.getLogger(SimpleGrantedAuthoritySerializer.class.getName());
+  def targetClass
+
+  public SimpleGrantedAuthoritySerializer(){
+  }
+
+  @Override
+  public void write (Kryo kryo, Output output, Object grantedAuth ) {
+    log.trace "started writing SimpleGrantedAuthority ${grantedAuth}"
+    kryo.writeClassAndObject( output, grantedAuth.role )
+    log.trace "finished writing SimpleGrantedAuthority  ${grantedAuth}"
+  }
+
+  @Override
+  public Object create (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "starting create SimpleGrantedAuthority" 
+    return read(kryo,input,type)
+  }
+
+  @Override
+  public Object read (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "starting reading SimpleGrantedAuthority"
+    def role = kryo.readClassAndObject( input )
+    
+    def constructor = targetClass.getConstructor(String.class)
+    def ga = constructor.newInstance(role)
+
+    log.trace "finished reading SimpleGrantedAuthority: ${ga}"
+    return ga
+  }
+}
+
 public class GrantedAuthorityImplSerializer extends Serializer<Object> {
 
   final static Logger log = Logger.getLogger(GrantedAuthorityImplSerializer.class.getName());
@@ -226,6 +287,7 @@ public class GrailsUserSerializer extends Serializer<Object> {
     kryo.writeClassAndObject(output,user.accountNonLocked)
     kryo.writeClassAndObject(output,user.credentialsNonExpired)
     kryo.writeClassAndObject(output,user.enabled)
+    //kryo.writeClassAndObject(output,user.authorities)
     log.trace "finished writing ${user}"
   }
 
@@ -244,6 +306,7 @@ public class GrailsUserSerializer extends Serializer<Object> {
     def accountNonLocked = kryo.readClassAndObject( input )
     def credentialsNonExpired = kryo.readClassAndObject( input )
     def enabled = kryo.readClassAndObject( input )
+    def authorities = []
     def constructor = targetClass.getConstructor(String.class, String.class, boolean.class, boolean.class, boolean.class, boolean.class, Collection.class, Object.class)
     def user = constructor.newInstance( username,
                                "",
@@ -251,8 +314,59 @@ public class GrailsUserSerializer extends Serializer<Object> {
                                accountNonExpired,
                                credentialsNonExpired,
                                accountNonLocked,
-                               [],
+                               authorities,
                                id )
+    log.trace "finished reading ${user}"
+    return user
+  }
+}
+
+public class UserSerializer extends Serializer<Object>{
+
+  // org.springframework.security.core.userdetails.User
+  final static Logger log = Logger.getLogger(UserSerializer.class.getName());
+
+  def targetClass
+
+  public UserSerializer(){
+  }
+
+  @Override
+  public void write (Kryo kryo, Output output, Object user) {
+    log.trace "starting writing ${user}"
+    //NOTE: note writing authorities on purpose - those get written as part of the UsernamePasswordAuthenticationToken
+    kryo.writeClassAndObject(output,user.username)
+    kryo.writeClassAndObject(output,user.isAccountNonExpired())
+    kryo.writeClassAndObject(output,user.isAccountNonLocked())
+    kryo.writeClassAndObject(output,user.isCredentialsNonExpired())
+    kryo.writeClassAndObject(output,user.isEnabled())
+    //kryo.writeClassAndObject(output,user.authorities)
+    log.trace "finished writing ${user}"
+  }
+
+  @Override
+  public Object create (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "creating GrailsUser"
+    return read(kryo,input,type)
+  }
+
+  @Override
+  public Object read (Kryo kryo, Input input, Class<Object> type) {
+    log.trace "starting reading GrailsUser"
+    def username = kryo.readClassAndObject( input )
+    def accountNonExpired = kryo.readClassAndObject( input )
+    def accountNonLocked = kryo.readClassAndObject( input )
+    def credentialsNonExpired = kryo.readClassAndObject( input )
+    def enabled = kryo.readClassAndObject( input )
+    def authorities = []
+    def constructor = targetClass.getConstructor(String.class, String.class, boolean.class, boolean.class, boolean.class, boolean.class, Collection.class)
+    def user = constructor.newInstance( username,
+                               "",
+                               enabled,
+                               accountNonExpired,
+                               credentialsNonExpired,
+                               accountNonLocked,
+                               authorities )
     log.trace "finished reading ${user}"
     return user
   }
@@ -272,6 +386,7 @@ public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Ob
     kryo.writeClassAndObject(output,token.principal)
     kryo.writeClassAndObject(output,token.credentials)
     kryo.writeClassAndObject(output,token.authorities)
+    log.trace "writing authorities: ${token.authorities.class.name} - ${token.authorities}"
     kryo.writeClassAndObject(output,token.details)
     log.trace "finsihed writing ${token}"
   }
@@ -288,6 +403,10 @@ public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Ob
     def principal = kryo.readClassAndObject( input )
     def credentials = kryo.readClassAndObject( input )
     def authorities = kryo.readClassAndObject( input )
+    log.trace "Authorities: ${authorities}"
+    if( authorities ){
+      authorities.each{ log.trace "${it.class.name}, ${it}" }
+    }
     def details = kryo.readClassAndObject( input )
     
     def constructor = targetClass.getConstructor(Object.class,Object.class,Collection.class)

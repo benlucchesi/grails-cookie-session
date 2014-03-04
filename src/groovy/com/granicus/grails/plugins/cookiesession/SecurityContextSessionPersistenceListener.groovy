@@ -50,6 +50,8 @@ public class SecurityContextSessionPersistenceListener implements SessionPersist
 
     public void beforeSessionSaved( SerializableSession session ){
       log.trace "beforeSessionSaved()"
+      
+      log.trace session
 
       if( session.SPRING_SECURITY_SAVED_REQUEST_KEY ){
         def sessionCookies = session.SPRING_SECURITY_SAVED_REQUEST_KEY.@cookies.findAll{ it.name =~ cookieName }

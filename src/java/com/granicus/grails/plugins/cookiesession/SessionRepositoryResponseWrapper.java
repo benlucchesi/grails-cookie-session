@@ -94,11 +94,17 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
 
     @Override
     public void setStatus(int sc){
-      if( log.isTraceEnabled() ){ log.trace("intercepting setStatus to save session"); }
+      if( log.isTraceEnabled() ){ log.trace("intercepting setStatus(" + sc + ") to save session"); }
       this.saveSession();
       super.setStatus(sc);
     }
 
+    @Override
+    public void setStatus(int sc, String sm){
+      if( log.isTraceEnabled() ){ log.trace("intercepting setStatus(" + sc + ", " + sm + ") to save session"); }
+      this.saveSession();
+      super.setStatus(sc, sm);
+    }
 
     @Override
     public void flushBuffer() throws java.io.IOException{
@@ -126,5 +132,19 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
       if( log.isTraceEnabled() ){ log.trace("intercepting sendRedirect(" + location + ") to save session"); }
       this.saveSession();
       super.sendRedirect(location);
+    }
+
+    @Override
+    public void sendError(int sc) throws java.io.IOException{
+      if( log.isTraceEnabled() ){ log.trace("intercepting sendError(" + sc + ") to save session"); }
+      this.saveSession();
+      super.sendError(sc);
+    }
+
+    @Override
+    public void sendError(int sc, String msg) throws java.io.IOException{
+      if( log.isTraceEnabled() ){ log.trace("intercepting sendError(" + sc + ", " + msg + ") to save session"); }
+      this.saveSession();
+      super.sendError(sc,msg);
     }
 }
