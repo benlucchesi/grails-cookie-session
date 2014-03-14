@@ -145,6 +145,11 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>calls Cookie.setComment on cookie-session cookies.</td>
     </tr>
 
+    <tr>
+      <td>grails.plugin.cookiesession.warnthreshold</td>
+      <td>0.8</td>
+      <td>Threshold for logging a warning when the cookie size becomes equal to or greater than the total maximum cookie size (cookieCount * maxCookieSize)</td>
+    </tr>
 
     <tr>
       <td>grails.plugin.cookiesession.id</td>
