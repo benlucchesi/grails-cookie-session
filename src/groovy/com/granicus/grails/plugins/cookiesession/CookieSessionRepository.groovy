@@ -58,6 +58,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   boolean encryptCookie = true
   String cryptoAlgorithm = "Blowfish"
   def cryptoSecret = null
+  int cryptoKeySize = null
   
   long maxInactiveInterval = 120 
 
@@ -163,6 +164,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
     assignSettingFromConfig( 'encryptcookie', false, Boolean, 'encryptCookie' )
     assignSettingFromConfig( 'cryptoalgorithm', 'Blowfish', String, 'cryptoAlgorithm' )
+    assignSettingFromConfig( 'cryptokeysize', null, Integer, 'cryptoKeySize' )
     
     def cryptoSecretConfig = grailsApplication.config.grails.plugin.cookiesession.find{ k,v -> k.equalsIgnoreCase('secret') }
     if( cryptoSecretConfig ){
@@ -252,8 +254,12 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     // initialize the crypto key
     if( cryptoSecret == null ){
       def keyGenerator = javax.crypto.KeyGenerator.getInstance( cryptoAlgorithm.split('/')[0] )
-      def secureRandom = new java.security.SecureRandom()
-      keyGenerator.init(secureRandom)
+      if (cryptoKeySize == null) {
+          def secureRandom = new java.security.SecureRandom()
+          keyGenerator.init(secureRandom)
+      } else {
+          keyGenerator.init(cryptoKeySize)
+      }
       cryptoKey = keyGenerator.generateKey()
     }
     else{
