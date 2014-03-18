@@ -122,7 +122,7 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
     </tr>
 
     <tr>
-      <td>grails.plugin.cookiesession.sethttponly</td>
+      <td>grails.plugin.cookiesession.httponly</td>
       <td>false</td>
       <td>calls Cookie.setHttpOnly on cookie-session cookies. This flag indicates to browsers that the cookie should not be made available to scripts.</td>
     </tr>
