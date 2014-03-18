@@ -66,6 +66,11 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
       <td>The cryptographic algorithm used to encrypt session data (i.e. Blowfish, DES, DESEde, AES). NOTE: the secret must be compatible with the crypto algorithm. Version 2.0.12 supports non-ECB cipher modes, such as 'Blowfish/CBC/PKCS5Padding', that require an initialization vector</td>
     </tr>
     <tr>
+      <td>grails.plugin.cookiesession.cryptokeysize</td>
+      <td>-unset-</td>
+      <td>The cryptographic key size used by the KeyGenerator. If left unset, SecureRandom will be used to set the key size.</td>
+    </tr>
+    <tr>
       <td>grails.plugin.cookiesession.secret</td>
       <td><b>generated</b></td>
       <td>The secret key used to encrypt session data. If not set, a random key will be created at runtime. Set this parameter if deploying multiple instances of the application or if sessions need to survive a server crash or restart. sessions to be recovered after a server crash or restart.</td>
@@ -187,6 +192,7 @@ Config.groovy
     grails.plugin.cookiesession.enabled = true
     grails.plugin.cookiesession.encryptcookie = true
     grails.plugin.cookiesession.cryptoalgorithm = "Blowfish"
+    grails.plugin.cookiesession.cryptokeysize = 128
     grails.plugin.cookiesession.secret = "This is my secret."
     grails.plugin.cookiesession.cookiecount = 10
     grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
