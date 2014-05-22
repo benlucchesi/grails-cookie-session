@@ -73,6 +73,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   String serializer = "java"
   Boolean useSessionCookieConfig
   Boolean useInitializationVector
+  def servletContext 
 
   def sessionCookieConfigMethods = [:]
 
@@ -81,17 +82,15 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   void configureCookieSessionRepository(){
 
     log.info "configuring CookieSessionRepository"
-     
-    def servletContext 
+
+    if( applicationContext.containsBean('servletContext') )
+      servletContext = applicationContext.getBean('servletContext')
 
     assignSettingFromConfig( 'useSessionCookieConfig', false, Boolean, 'useSessionCookieConfig' )
     if( useSessionCookieConfig ){
-      if( applicationContext.containsBean('servletContext') ){
-        servletContext = applicationContext.getBean('servletContext')
-        if( servletContext.majorVersion < 3 ){
+
+      if( servletContext?.majorVersion < 3 )
           useSessionCookieConfig = false
-        }
-      }
       else
         useSessionCookieConfig = false;
    
@@ -549,14 +548,19 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     c.maxAge = m // maxage overrides class scope variable
     c.secure = secure
     c.path = path
-    c.httpOnly = httpOnly
+
+    if( servletContext?.majorVersion >= 3 )
+      c.httpOnly = httpOnly
 
     if( domain )
       c.domain = domain
     if( comment )
       c.comment = comment
 
-    log.trace "created cookie name=${c.name}, maxAge=${c.maxAge}, secure=${c.secure}, path=${c.path}, httpOnly=${c.httpOnly}, domain=${c.domain}, comment=${c.comment}"
+    if( servletContext?.majorVersion >= 3 )
+      log.trace "created cookie name=${c.name}, maxAge=${c.maxAge}, secure=${c.secure}, path=${c.path}, httpOnly=${c.httpOnly}, domain=${c.domain}, comment=${c.comment}"
+    else
+      log.trace "created cookie name=${c.name}, maxAge=${c.maxAge}, secure=${c.secure}, path=${c.path}, domain=${c.domain}, comment=${c.comment}"
 
     return c
   }
