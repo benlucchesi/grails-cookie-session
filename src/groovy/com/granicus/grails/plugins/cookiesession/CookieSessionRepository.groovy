@@ -549,7 +549,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     c.secure = secure
     c.path = path
 
-    if( servletContext.majorVersion >= 3 )
+    if( servletContext?.majorVersion >= 3 )
       c.httpOnly = httpOnly
 
     if( domain )
@@ -557,7 +557,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     if( comment )
       c.comment = comment
 
-    if( servletContext.majorVersion >= 3 )
+    if( servletContext?.majorVersion >= 3 )
       log.trace "created cookie name=${c.name}, maxAge=${c.maxAge}, secure=${c.secure}, path=${c.path}, httpOnly=${c.httpOnly}, domain=${c.domain}, comment=${c.comment}"
     else
       log.trace "created cookie name=${c.name}, maxAge=${c.maxAge}, secure=${c.secure}, path=${c.path}, domain=${c.domain}, comment=${c.comment}"
