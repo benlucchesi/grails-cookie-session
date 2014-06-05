@@ -67,13 +67,19 @@ public class CookieSessionFilter extends OncePerRequestFilter implements Initial
             FilterChain chain) throws IOException, ServletException {
  
       if( log.isTraceEnabled() ){ log.trace("doFilterInteral()"); }
-  
+
       SessionRepositoryRequestWrapper requestWrapper = new SessionRepositoryRequestWrapper( request, sessionRepository );
       requestWrapper.setServletContext( this.getServletContext() );
       requestWrapper.setSessionPersistenceListeners(this.sessionPersistenceListeners);
       requestWrapper.restoreSession();
 
-      SessionRepositoryResponseWrapper responseWrapper = new SessionRepositoryResponseWrapper( response, sessionRepository, requestWrapper );
+      // if spring security integration is supported it is necessary to enforce session creation 
+      // if one does not exist yet. otherwise the security context will not be persisted and 
+      // propagated between requests if the application did not happen to use a session yet.
+
+      boolean enforceSession = this.applicationContext.containsBeanDefinition("securityContextSessionPersistenceListener");
+
+      SessionRepositoryResponseWrapper responseWrapper = new SessionRepositoryResponseWrapper( response, sessionRepository, requestWrapper, enforceSession );
       responseWrapper.setSessionPersistenceListeners(this.sessionPersistenceListeners);
       chain.doFilter(requestWrapper, responseWrapper);
     }
