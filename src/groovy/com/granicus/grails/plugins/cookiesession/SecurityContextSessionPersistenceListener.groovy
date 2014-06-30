@@ -23,7 +23,6 @@ import org.springframework.beans.factory.InitializingBean
 import com.granicus.grails.plugins.cookiesession.SessionPersistenceListener;
 import com.granicus.grails.plugins.cookiesession.SerializableSession;
 
-import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
 import org.apache.log4j.Logger;
 
@@ -38,8 +37,8 @@ public class SecurityContextSessionPersistenceListener implements SessionPersist
     
     void afterPropertiesSet(){
       log.trace "afterPropertiesSet()"
-      if( ch.config.grails.plugin.cookiesession.containsKey('cookiename') ){
-        cookieName = ch.config.grails.plugin.cookiesession.cookiename
+      if( grailsApplication.config.grails.plugin.cookiesession.containsKey('cookiename') ){
+        cookieName = grailsApplication.config.grails.plugin.cookiesession.cookiename
       }
 
       securityContextHolder = grailsApplication.classLoader.loadClass("org.springframework.security.core.context.SecurityContextHolder")
