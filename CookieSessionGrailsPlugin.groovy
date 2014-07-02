@@ -27,7 +27,7 @@ import com.granicus.grails.plugins.cookiesession.ExceptionCondenser
 import com.granicus.grails.plugins.cookiesession.SecurityContextSessionPersistenceListener
 
 class CookieSessionGrailsPlugin {
-    def version = "2.0.15"
+    def version = "2.0.16"
     def grailsVersion = "1.2.4 > *"
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
