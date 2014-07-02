@@ -37,7 +37,6 @@ import java.util.Collections;
 
 import org.apache.log4j.Logger;
 
-import org.codehaus.groovy.grails.commons.ConfigurationHolder as ch
 
 class KryoSessionSerializer implements SessionSerializer, InitializingBean{
 
@@ -54,8 +53,8 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
   void afterPropertiesSet(){
       log.trace "bean properties set, performing bean configuring bean"
 
-      if( ch.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') ){
-        springSecurityCompatibility = ch.config.grails.plugin.cookiesession['springsecuritycompatibility']?true:false
+      if( grailsApplication.config.grails.plugin.cookiesession.containsKey('springsecuritycompatibility') ){
+        springSecurityCompatibility = grailsApplication.config.grails.plugin.cookiesession['springsecuritycompatibility']?true:false
         springSecurityPluginVersion = grailsApplication.mainContext.getBean('pluginManager').allPlugins.find{ it.name == "springSecurityCore" }.version
       }
       
@@ -186,14 +185,14 @@ public class LocaleSerializer extends Serializer<java.util.Locale> {
     log.trace "finished writing locale ${locale}"
   }
 
-  @Override
-  public Object create (Kryo kryo, Input input, Class<java.util.Locale> type) {
+//  @Override
+  public Locale create (Kryo kryo, Input input, Class<java.util.Locale> type) {
     log.trace "starting create Local"
     return read(kryo,input,type)
   }
 
   @Override
-  public Object read (Kryo kryo, Input input, Class<Locale> type) {
+  public Locale read (Kryo kryo, Input input, Class<Locale> type) {
     log.trace "starting reading Locale"
     def locale = new java.util.Locale(input.readString(),input.readString(),input.readString()) 
     log.trace "finished reading Locale: ${locale}"
@@ -216,7 +215,7 @@ public class SimpleGrantedAuthoritySerializer extends Serializer<Object> {
     log.trace "finished writing SimpleGrantedAuthority  ${grantedAuth}"
   }
 
-  @Override
+//  @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
     log.trace "starting create SimpleGrantedAuthority" 
     return read(kryo,input,type)
@@ -250,7 +249,7 @@ public class GrantedAuthorityImplSerializer extends Serializer<Object> {
     log.trace "finished writing GrantedAuthorityImpl ${grantedAuth}"
   }
 
-  @Override
+//  @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
     log.trace "starting create GrantedAuthorityImpl" 
     return read(kryo,input,type)
@@ -291,7 +290,7 @@ public class GrailsUserSerializer extends Serializer<Object> {
     log.trace "finished writing ${user}"
   }
 
-  @Override
+//  @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
     log.trace "creating GrailsUser"
     return read(kryo,input,type)
@@ -344,7 +343,7 @@ public class UserSerializer extends Serializer<Object>{
     log.trace "finished writing ${user}"
   }
 
-  @Override
+//  @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
     log.trace "creating GrailsUser"
     return read(kryo,input,type)
@@ -391,7 +390,7 @@ public class UsernamePasswordAuthenticationTokenSerializer extends Serializer<Ob
     log.trace "finsihed writing ${token}"
   }
 
-  @Override
+//  @Override
   public Object create (Kryo kryo, Input input, Class<Object> type) {
     log.trace "creating UsernamePasswordAuthenticationToken"
     return read(kryo,input,type)
