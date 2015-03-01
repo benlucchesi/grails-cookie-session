@@ -17,35 +17,21 @@
  *  ben@granicus.com or benlucchesi@gmail.com
  */
 
-package com.granicus.grails.plugins.cookiesession;
+package com.granicus.grails.plugins.cookiesession
 
+import org.apache.log4j.Logger
 import org.springframework.beans.factory.InitializingBean
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import java.io.ByteArrayOutputStream;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Cookie;
-
-import java.util.zip.GZIPOutputStream
-import java.util.zip.GZIPInputStream
-
+import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import javax.crypto.CipherInputStream
-import javax.crypto.CipherOutputStream
-import javax.crypto.SealedObject
-import javax.crypto.Cipher
-
-import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
-
-import java.util.UUID
-
-import org.apache.log4j.Logger;
+import javax.servlet.http.Cookie
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 
 class CookieSessionRepository implements SessionRepository, InitializingBean, ApplicationContextAware  {
 
@@ -89,10 +75,10 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     assignSettingFromConfig( 'useSessionCookieConfig', false, Boolean, 'useSessionCookieConfig' )
     if( useSessionCookieConfig ){
 
-      if( servletContext?.majorVersion < 3 )
-          useSessionCookieConfig = false
+      if( servletContext?.majorVersion >= 3 )
+          useSessionCookieConfig = true
       else
-        useSessionCookieConfig = false;
+        useSessionCookieConfig = false
    
       if( useSessionCookieConfig == false )
         log.warn "useSessionCookieConfig was enabled in the config file, but has been disabled because the servlet does not support SessionCookieConfig."  

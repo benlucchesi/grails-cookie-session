@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletOutputStream;
 
-import java.util.Map;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;

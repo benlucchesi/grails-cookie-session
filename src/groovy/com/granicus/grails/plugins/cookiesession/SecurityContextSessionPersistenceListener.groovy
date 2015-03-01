@@ -17,14 +17,10 @@
  *  ben@granicus.com or benlucchesi@gmail.com
  */
 
-package com.granicus.grails.plugins.cookiesession;
+package com.granicus.grails.plugins.cookiesession
 
+import org.apache.log4j.Logger
 import org.springframework.beans.factory.InitializingBean
-import com.granicus.grails.plugins.cookiesession.SessionPersistenceListener;
-import com.granicus.grails.plugins.cookiesession.SerializableSession;
-
-
-import org.apache.log4j.Logger;
 
 public class SecurityContextSessionPersistenceListener implements SessionPersistenceListener, InitializingBean {
 

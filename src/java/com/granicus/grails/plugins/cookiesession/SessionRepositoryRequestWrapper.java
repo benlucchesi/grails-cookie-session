@@ -24,7 +24,6 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletContext;
 
-import java.util.Map;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
