@@ -18,7 +18,6 @@
  */
 
 import org.springframework.web.filter.DelegatingFilterProxy
-import grails.util.Environment
 import com.granicus.grails.plugins.cookiesession.JavaSessionSerializer
 import com.granicus.grails.plugins.cookiesession.KryoSessionSerializer
 import com.granicus.grails.plugins.cookiesession.CookieSessionFilter

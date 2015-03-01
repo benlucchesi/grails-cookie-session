@@ -17,11 +17,10 @@
  *  ben@granicus.com or benlucchesi@gmail.com
  */
 
-package com.granicus.grails.plugins.cookiesession;
+package com.granicus.grails.plugins.cookiesession
 
+import org.apache.log4j.Logger
 import org.codehaus.groovy.grails.commons.GrailsApplication
-import org.apache.log4j.Logger;
-import java.io.ByteArrayOutputStream;
 
 class JavaSessionSerializer implements SessionSerializer{
 

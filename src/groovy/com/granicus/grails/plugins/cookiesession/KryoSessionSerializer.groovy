@@ -16,27 +16,28 @@
  *  Ben Lucchesi
  *  ben@granicus.com or benlucchesi@gmail.com
  */
-package com.granicus.grails.plugins.cookiesession;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+package com.granicus.grails.plugins.cookiesession
 
 import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
-import com.esotericsoftware.shaded.org.objenesis.strategy.StdInstantiatorStrategy
 import com.esotericsoftware.kryo.serializers.FieldSerializer
-import de.javakaffee.kryoserializers.*
-
+import com.esotericsoftware.shaded.org.objenesis.strategy.StdInstantiatorStrategy
+import de.javakaffee.kryoserializers.ArraysAsListSerializer
+import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer
+import de.javakaffee.kryoserializers.CollectionsEmptyMapSerializer
+import de.javakaffee.kryoserializers.CollectionsEmptySetSerializer
+import de.javakaffee.kryoserializers.CollectionsSingletonListSerializer
+import de.javakaffee.kryoserializers.CollectionsSingletonMapSerializer
+import de.javakaffee.kryoserializers.CollectionsSingletonSetSerializer
+import de.javakaffee.kryoserializers.GregorianCalendarSerializer
+import de.javakaffee.kryoserializers.JdkProxySerializer
+import de.javakaffee.kryoserializers.SynchronizedCollectionsSerializer
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
+import org.apache.log4j.Logger
 import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
-
 import org.springframework.beans.factory.InitializingBean
-
-import java.util.Collections;
-
-import org.apache.log4j.Logger;
-
 
 class KryoSessionSerializer implements SessionSerializer, InitializingBean{
 
