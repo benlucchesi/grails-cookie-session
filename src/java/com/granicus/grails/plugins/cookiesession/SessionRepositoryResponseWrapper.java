@@ -36,14 +36,17 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
     private SessionRepository sessionRepository;
     private SessionRepositoryRequestWrapper request;
     private boolean sessionSaved = false;
+    private boolean enforceSession = false;
     private ArrayList<SessionPersistenceListener> sessionPersistenceListeners;
 
     public SessionRepositoryResponseWrapper( HttpServletResponse response, 
                                               SessionRepository sessionRepository,
-                                              SessionRepositoryRequestWrapper request ) {
+                                              SessionRepositoryRequestWrapper request,
+                                              boolean enforceSession ) {
       super(response);
       this.sessionRepository = sessionRepository;
       this.request = request;
+      this.enforceSession = enforceSession;
     }
 
     public void setSessionPersistenceListeners(ArrayList<SessionPersistenceListener> value){
@@ -65,7 +68,7 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
         return;
       }
 
-      SerializableSession session = (SerializableSession) request.getSession(false);
+      SerializableSession session = (SerializableSession) request.getSession(this.enforceSession);
 
       if( session == null ){
         if( log.isTraceEnabled() ){ log.trace("session is null, not saving."); }
