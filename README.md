@@ -1,6 +1,6 @@
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.16
+Current Version: 2.0.17
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -36,7 +36,7 @@ grails install-plugin cookie-session
 
 edit grails-app/conf/BuildConfig.groovy and add the following line under the plugins closure
 
-  compile ":cookie-session:2.0.16"
+  compile ":cookie-session:2.0.17"
 
 # Configuration
 The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
@@ -292,7 +292,13 @@ For examples of how to implement a SessionSerializer, see the implementations of
 * com.granicus.grails.plugins.cookiesession.KryoSessionSerializer.
 
 ## Spring Security Compatibility (version 2.0.7+)
-Spring Security Compatibility, configured with the springsecuritycompatibility setting, directs the cookie-session plugin to adjust its behavior to be more compatible with thespring-security-core plugin. The primary issue addressed in this mode relates to when the spring-security core's SecurityContextPersistenceFilter writes the current security context to the SecurityContextRepository. In most cases, the SecurityContextPersistenceFilter stores the current security context after the current web response has been written. This is a problem for the cookie-session plugin because the session is stored in cookies in the web response. As a result, the current security context is never saved in the session, in effect losing the security context after each request. To work around this issue, spring security compatibility mode causes the cookie-session plugin to write the current security context to the session just before the session is serialized and saved in cookies. The security context is stored under the key that the SecurityContextRepository expects to find the security context. The next issue that Spring Security Compatibility addresses involves cookies saved in the DefaultSavedRequest. DefaultSavedRequest is created by spring security core and stored in the session during redirects, such as after authentication. Spring Security Compatibility causes the cookie-sessino plugin to detect the presense of a DefaultSavedRequest in the session and remove any cookie-session cookies it may be storing. This ensures that old session information doesn't replace more current session information when following a redirects. This also reduces the size of the the serialized session because the DefaultSavedRequest is storing an old copy of a session in the current session. Finally, Spring Security Compatibility adds custom kryo serializers (when kryo serialization is enabled) to successfully serialize objects that kryo isn't capable of serializing by default.
+Spring Security Compatibility, configured with the `springsecuritycompatibility` setting, directs the cookie-session plugin to adjust its behavior to be more compatible with the spring-security-core plugin. 
+
+The primary issue addressed in this mode relates to when the spring-security core's SecurityContextPersistenceFilter writes the current security context to the SecurityContextRepository. In most cases, the SecurityContextPersistenceFilter stores the current security context after the current web response has been written. This is a problem for the cookie-session plugin because the session is stored in cookies in the web response. As a result, the current security context is never saved in the session, in effect losing the security context after each request. To work around this issue, spring security compatibility mode causes the cookie-session plugin to write the current security context to the session just before the session is serialized and saved in cookies. The security context is stored under the key that the SecurityContextRepository expects to find the security context. 
+
+The next issue that Spring Security Compatibility addresses involves cookies saved in the DefaultSavedRequest. DefaultSavedRequest is created by spring security core and stored in the session during redirects, such as after authentication. Spring Security Compatibility causes the cookie-session plugin to detect the presense of a DefaultSavedRequest in the session and remove any cookie-session cookies it may be storing. This ensures that old session information doesn't replace more current session information when following a redirects. This also reduces the size of the the serialized session because the DefaultSavedRequest is storing an old copy of a session in the current session. Finally, Spring Security Compatibility adds custom kryo serializers (when kryo serialization is enabled) to successfully serialize objects that kryo isn't capable of serializing by default.
+
+When compatibility with Spring Security is enabled the plugin may enforce new session creation if none exists yet. The reason is that without a session present the Security Context would not be persisted and propagaded between requests. This would manifest as an intermittent issue depending whether or not the application uses session for some other purpose or not (e.g. flash scope).
 
 ## use of SessionCookieConfig
 SessionCookieConfig is a interface introduced in Servlet 3.0 and is used to specify configuration parameters of session cookies. If you enable the grails.plugin.cookiesession.usesessioncookieconfig parameter, then this interface is used to configure the cookie session cookies. In order for this option to work, the servlet context must be servlet context version 3.0 or great. 
