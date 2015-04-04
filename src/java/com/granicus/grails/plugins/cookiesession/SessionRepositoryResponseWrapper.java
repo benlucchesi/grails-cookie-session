@@ -63,11 +63,6 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
         return; 
       }
 
-      if( sessionSaved == true ){
-        if( log.isTraceEnabled() ){ log.trace("session is already saved, not attempting to save again."); }
-        return;
-      }
-
       SerializableSession session = (SerializableSession) request.getSession(this.enforceSession);
 
       if( session == null ){
@@ -75,8 +70,10 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
         return;
       }
 
-      // flag the session as saved.
-      sessionSaved = true;
+      if(session.getIsDirty() == false ){
+        if( log.isTraceEnabled() ){ log.trace("session is not dirty, not saving."); }
+        return;
+      }
 
       if( log.isTraceEnabled() ){ log.trace("calling session repository to save session."); }
 
@@ -93,6 +90,7 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
       }
  
       sessionRepository.saveSession(session,this);
+      session.setIsDirty(false);
     }
 
     @Override

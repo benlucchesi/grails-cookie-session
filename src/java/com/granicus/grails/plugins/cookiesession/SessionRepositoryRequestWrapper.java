@@ -56,6 +56,12 @@ public class SessionRepositoryRequestWrapper extends HttpServletRequestWrapper {
         // - assign the servlet context
 
         session = sessionRepository.restoreSession( this );
+        
+        // we just loaded so we can't be dirty
+        if (session != null)
+        {
+            session.setIsDirty(false);
+        }
 
         if( sessionPersistenceListeners != null ){
           // call sessionPersistenceListeners

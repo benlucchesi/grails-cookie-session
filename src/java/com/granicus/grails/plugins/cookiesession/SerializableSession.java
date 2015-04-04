@@ -63,6 +63,7 @@ public class SerializableSession implements HttpSession, Serializable {
       private HashMap<String,Serializable> attributes;
 
       private Boolean isValid = true; 
+      private Boolean isDirty = false;
       transient private ServletContext servletContext;
       transient private boolean newSession;
       transient private int maxInactiveInterval;
@@ -166,12 +167,24 @@ public class SerializableSession implements HttpSession, Serializable {
 
       public void invalidate(){
         isValid = false;
+        isDirty = true;
       }
 
       protected void setIsNewSession( boolean isNewSession ){
         this.newSession = isNewSession;
       }
+
       public boolean isNew(){
         return ( this.newSession );
+      }
+
+      protected void setIsDirty(boolean isDirty)
+      {
+          this.isDirty = isDirty;
+      }
+
+      protected boolean getIsDirty()
+      {
+          return this.isDirty;
       }
 }
