@@ -35,7 +35,6 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
     private String sessionId = "simplesession";
     private SessionRepository sessionRepository;
     private SessionRepositoryRequestWrapper request;
-    private boolean sessionSaved = false;
     private boolean enforceSession = false;
     private ArrayList<SessionPersistenceListener> sessionPersistenceListeners;
 
