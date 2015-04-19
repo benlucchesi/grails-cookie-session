@@ -94,7 +94,7 @@ class KryoSessionSerializer implements SessionSerializer, InitializingBean{
     log.trace "configuring kryo serializer"
 
     def kryo = new Kryo()
-
+    kryo.setAsmEnabled(true)
     
     // register fieldserializer for GrailsFlashScope
     def flashScopeSerializer = new FieldSerializer(kryo, GrailsFlashScope.class);
