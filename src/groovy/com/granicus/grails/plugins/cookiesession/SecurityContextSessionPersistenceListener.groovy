@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 public class SecurityContextSessionPersistenceListener implements SessionPersistenceListener, InitializingBean {
 
-    final static Logger log = Logger.getLogger(SerializableSession.class.getName());
+    final static Logger log = Logger.getLogger(SecurityContextSessionPersistenceListener.class.getName());
 
     def grailsApplication
     def securityContextHolder
@@ -52,11 +52,21 @@ public class SecurityContextSessionPersistenceListener implements SessionPersist
       
       log.trace session
 
-      if( session.SPRING_SECURITY_SAVED_REQUEST_KEY ){
+      // needed for backwards compatibility
+      if( session.SPRING_SECURITY_SAVED_REQUEST_KEY){
         def sessionCookies = session.SPRING_SECURITY_SAVED_REQUEST_KEY.@cookies.findAll{ it.name =~ cookieName }
         sessionCookies.each{
           session.SPRING_SECURITY_SAVED_REQUEST_KEY.@cookies.remove(it)
         }
+        log.trace "removed cookies from saved request in SPRING_SECURITY_SAVED_REQUEST_KEY" 
+      }
+      
+      if( session.SPRING_SECURITY_SAVED_REQUEST ){
+        def sessionCookies = session.SPRING_SECURITY_SAVED_REQUEST.@cookies.findAll{ it.name =~ cookieName }
+        sessionCookies.each{
+          session.SPRING_SECURITY_SAVED_REQUEST.@cookies.remove(it)
+        }
+        log.trace "removed cookies from saved request in SPRING_SECURITY_SAVED_REQUEST" 
       }
 
       if( session.SPRING_SECURITY_CONTEXT != securityContextHolder.getContext() ){
