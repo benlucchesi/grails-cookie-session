@@ -52,10 +52,10 @@ public class SecurityContextSessionPersistenceListener implements SessionPersist
       
       log.trace session
 
-      if( session.SPRING_SECURITY_SAVED_REQUEST_KEY ){
-        def sessionCookies = session.SPRING_SECURITY_SAVED_REQUEST_KEY.@cookies.findAll{ it.name =~ cookieName }
+      if( session.SPRING_SECURITY_SAVED_REQUEST ){
+        def sessionCookies = session.SPRING_SECURITY_SAVED_REQUEST.@cookies.findAll{ it.name =~ cookieName }
         sessionCookies.each{
-          session.SPRING_SECURITY_SAVED_REQUEST_KEY.@cookies.remove(it)
+          session.SPRING_SECURITY_SAVED_REQUEST.@cookies.remove(it)
         }
       }
 
