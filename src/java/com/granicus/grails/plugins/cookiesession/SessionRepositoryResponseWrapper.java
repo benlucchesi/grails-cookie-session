@@ -83,6 +83,7 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
       // call sessionPersistenceListeners
       if( sessionPersistenceListeners != null ){
         for( SessionPersistenceListener listener : sessionPersistenceListeners ){
+          if( log.isTraceEnabled() ){ log.trace("calling session persistence listener: " + listener); }
           try{
             listener.beforeSessionSaved(session);
           }
@@ -90,6 +91,9 @@ public class SessionRepositoryResponseWrapper extends HttpServletResponseWrapper
             log.error("Error calling SessionPersistenceListener.beforeSessionSaved(): " + excp.toString());
           }
         }
+      }
+      else{
+        if( log.isTraceEnabled() ){ log.trace("no session persistence listeners called."); }
       }
  
       sessionRepository.saveSession(session,this);
