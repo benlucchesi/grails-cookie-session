@@ -91,9 +91,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
       if( servletContext?.majorVersion < 3 )
           useSessionCookieConfig = false
-      else
-        useSessionCookieConfig = false;
-   
+
       if( useSessionCookieConfig == false )
         log.warn "useSessionCookieConfig was enabled in the config file, but has been disabled because the servlet does not support SessionCookieConfig."  
     }
