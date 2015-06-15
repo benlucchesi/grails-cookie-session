@@ -27,7 +27,7 @@ import com.granicus.grails.plugins.cookiesession.ExceptionCondenser
 import com.granicus.grails.plugins.cookiesession.SecurityContextSessionPersistenceListener
 
 class CookieSessionGrailsPlugin {
-    def version = "2.0.18"
+    def version = "2.0.17"
     def grailsVersion = "1.2.4 > *"
     def title = "Cookie Session Plugin" // Headline display name of the plugin
     def author = "Ben Lucchesi"
@@ -49,7 +49,12 @@ class CookieSessionGrailsPlugin {
 
     def doWithWebDescriptor = { xml ->
 
-        if ( !application.config.grails.plugin.cookiesession.enabled ) {
+        // Something is wrong with mergedConfig, so just call it here to have value, otherwise its is not initialized
+        if( application.mergedConfig?.grails?.plugin?.cookiesession?.enabled )
+        {
+        }
+
+        if ( !application.config.grails.plugin.cookiesession.enabled && !application.mergedConfig.grails.plugin.cookiesession.enabled ) {
             return
         }
 
@@ -75,7 +80,12 @@ class CookieSessionGrailsPlugin {
 
     def doWithSpring = {
 
-        if ( !application.config.grails.plugin.cookiesession.enabled ) {
+        // Something is wrong with mergedConfig, so just call it here to have value, otherwise its is not initialized
+        if( application.mergedConfig?.grails?.plugin?.cookiesession?.enabled )
+        {
+        }
+
+        if ( !application.config.grails.plugin.cookiesession.enabled && !application.mergedConfig.grails.plugin.cookiesession.enabled ) {
             return
         }
 
