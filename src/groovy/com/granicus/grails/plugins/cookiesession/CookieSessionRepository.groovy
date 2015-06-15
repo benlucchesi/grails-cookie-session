@@ -273,6 +273,10 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     def assignedSetting = false
     try{
       def configKey = grailsApplication.config.grails.plugin.cookiesession.find{ k,v -> k.equalsIgnoreCase(settingName) }
+	  if( !configKey )
+      {
+        configKey = grailsApplication.mergedConfig?.grails?.plugin?.cookiesession?.find{ k,v -> k.equalsIgnoreCase(settingName) }
+      }
       if( configKey ){
         this.(targetPropertyName.toString()) = configKey.value.asType(t)
         log.info "grails.plugin.cookiesession.${configKey.key} set: \'${this.(targetPropertyName.toString())}\'"
