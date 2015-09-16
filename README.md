@@ -1,3 +1,5 @@
+NOTE: if you're looking for Grails 3.x compatible plugin, go to: https://github.com/benlucchesi/grails-cookie-session-v3
+
 # Cookie Session Grails Plugin
 
 Current Version: 2.0.18
