@@ -1,22 +1,3 @@
-<plugin name='cookiesession' version='3.0.0' grailsVersion='3.0.0 &gt; *'>
-  <type>grails.plugin.cookiesession.CookiesessionGrailsPlugin</type>
-  <grailsVersion>3.0.0 &gt; *</grailsVersion>
-  <authorEmail>benlucchesi@gmail.com</authorEmail>
-  <version />
-  <author>Ben Lucchesi</author>
-  <organization name='Accuracy Software, LTD' url='http://www.benlucchesi.com/' />
-  <title>Cookie Session Plugin</title>
-  <loadAfter>[controllers]</loadAfter>
-  <pluginExcludes>[grails-app/views/error.gsp]</pluginExcludes>
-  <description>The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. This allows application deployments to be more stateless which supports simplified scaling architectures and fault tolerance." 
+<plugin grailsVersion='3.0.0 &gt; *' name='cookiesession' version='3.0.0'><type>grails.plugin.cookiesession.CookiesessionGrailsPlugin</type><grailsVersion>3.0.0 &gt; *</grailsVersion><authorEmail>benlucchesi@gmail.com</authorEmail><version></version><author>Ben Lucchesi</author><organization name='Accuracy Software, LTD' url='http://www.benlucchesi.com/'></organization><title>Cookie Session Plugin</title><loadAfter>[controllers]</loadAfter><pluginExcludes>[grails-app/views/error.gsp]</pluginExcludes><description>The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. This allows application deployments to be more stateless which supports simplified scaling architectures and fault tolerance." 
     def documentation = "http://github.com/benlucchesi/grails-cookie-session-v2
-</description>
-  <name>cookiesession</name>
-  <documentation>http://grails.org/plugin/cookiesession</documentation>
-  <profiles>[web]</profiles>
-  <license>APACHE</license>
-  <scm url='http://svn.codehaus.org/grails-plugins/' />
-  <resources>
-    <resource>com.benlucchesi.cookiesession.Application</resource>
-  </resources>
-</plugin>
+</description><name>cookiesession</name><documentation>http://grails.org/plugin/cookiesession</documentation><profiles>[web]</profiles><license>APACHE</license><scm url='http://svn.codehaus.org/grails-plugins/'></scm><resources><resource>com.benlucchesi.cookiesession.Application</resource></resources></plugin>

@@ -1,4 +1,7 @@
 /.settings
+/.gradle/*
+build/**
+.gradle/**
 /cobertura.ser
 stacktrace.log
 /plugin.xml
@@ -14,4 +17,3 @@ stacktrace.log
 *.ipr
 *.iws
 *.tld
-
