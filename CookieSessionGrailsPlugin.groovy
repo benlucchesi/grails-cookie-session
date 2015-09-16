@@ -49,8 +49,21 @@ class CookieSessionGrailsPlugin {
 
     def doWithWebDescriptor = { xml ->
 
-        if ( !application.config.grails.plugin.cookiesession.enabled ) {
-            return
+        try {
+            // Something is wrong with mergedConfig, so just call it here to have value, otherwise its is not initialized
+            if( application.mergedConfig?.grails?.plugin?.cookiesession?.enabled )
+            {
+            }
+            if ( !application.config.grails.plugin.cookiesession.enabled && !application.mergedConfig.grails.plugin.cookiesession.enabled ) {
+                return
+            }
+        }
+        catch( e )
+        {
+            log.debug "plugin-config (mergedConfig) is not available, checking normal config"
+            if ( !application.config.grails.plugin.cookiesession.enabled ) {
+                return
+            }
         }
 
         // add the filter after the last context-param
@@ -75,8 +88,21 @@ class CookieSessionGrailsPlugin {
 
     def doWithSpring = {
 
-        if ( !application.config.grails.plugin.cookiesession.enabled ) {
-            return
+       try {
+            // Something is wrong with mergedConfig, so just call it here to have value, otherwise its is not initialized
+            if( application.mergedConfig?.grails?.plugin?.cookiesession?.enabled )
+            {
+            }
+            if ( !application.config.grails.plugin.cookiesession.enabled && !application.mergedConfig.grails.plugin.cookiesession.enabled ) {
+                return
+            }
+        }
+        catch( e )
+        {
+            log.debug "plugin-config (mergedConfig) is not available, checking normal config"
+            if ( !application.config.grails.plugin.cookiesession.enabled ) {
+                return
+            }
         }
 
         sessionRepository(CookieSessionRepository){
