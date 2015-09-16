@@ -74,6 +74,12 @@ task wrapper(type: Wrapper) {
 
 bintray {   
 
+  user = System.getenv('BINTRAY_USER')
+  key = System.getenv('BINTRAY_APIKEY')
+
+  dryRun = false
+  publish = true
+
   pkg {
 
     repo = 'maven'
