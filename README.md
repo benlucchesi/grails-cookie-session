@@ -1,8 +1,6 @@
-NOTE: if you're looking for Grails 3.x compatible plugin, go to: https://github.com/benlucchesi/grails-cookie-session-v3
-
 # Cookie Session Grails Plugin
 
-Current Version: 2.0.18
+Current Version: 3.0.0
 
 The Cookie Session plugin enables grails applications to store session data in http cookies between requests instead of in memory on the server. Client sessions are transmitted from the browser to the application with each request and transmitted back with each response. This allows application deployments to be more stateless. Benefits of managing sessions this way include:
 
@@ -23,25 +21,17 @@ The Cookie Session plugin enables grails applications to store session data in h
       multi-instance deployment scenario, any instance of the applicatin can service a clients request. A benificial 
       side effect of cookie-sessions is that applications can be upgraded or restarted without logging out users.
 
-## Features new to version 2.0
-
-+ compatible with flash scope
-+ compatible with webflow
-+ supports secure sessions
-+ supports sessions larger than 4kb
+* Known incompatibility
+  - spring webflow
 
 # Installation
 
-grails install-plugin cookie-session
+edit build.gradle add the following line under the plugins closure
 
-  or
-
-edit grails-app/conf/BuildConfig.groovy and add the following line under the plugins closure
-
-  compile ":cookie-session:2.0.18"
+  compile ":grails-cookie-session-v3:3.0"
 
 # Configuration
-The following parameters are supported directly by the cookie-session-v2 plugin. Note, additional configuration is needed for webflow and large session support. See additional instructions below.
+The following parameters are supported directly by the cookie-session-v3 plugin. Note, additional configuration is needed for large session support. See additional instructions below.
 
 ## Parameters
 <table>
@@ -184,23 +174,26 @@ The following parameters are supported directly by the cookie-session-v2 plugin.
 
 ## Example
 
-Config.groovy
+application.yml
 
-    grails.plugin.cookiesession.enabled = true
-    grails.plugin.cookiesession.encryptcookie = true
-    grails.plugin.cookiesession.cryptoalgorithm = "Blowfish"
-    grails.plugin.cookiesession.secret = "This is my secret."
-    grails.plugin.cookiesession.cookiecount = 10
-    grails.plugin.cookiesession.maxcookiesize = 2048  // 2kb
-    grails.plugin.cookiesession.sessiontimeout = 3600 // one hour
-    grails.plugin.cookiesession.cookiename = 'gsession'
-    grails.plugin.cookiesession.condenseexceptions = false
-    grails.plugin.cookiesession.setsecure = true
-    grails.plugin.cookiesession.sethttponly = false
-    grails.plugin.cookiesession.path = '/'
-    grails.plugin.cookiesession.comment = 'Acme Session Info'
-    grails.plugin.cookiesession.serializer = 'kryo'
-    grails.plugin.cookiesession.springsecuritycompatibility = true
+        grails:
+          plugin:
+            cookiesession:
+              enabled: true
+              encryptcookie: true
+              cryptoalgorithm: "Blowfish"
+              secret: "This is my secret."
+              cookiecount: 10
+              maxcookiesize: 2048  // 2kb
+              sessiontimeout: 3600 // one hour
+              cookiename: 'gsession'
+              condenseexceptions: false
+              setsecure: true
+              sethttponly: false
+              path: '/'
+              comment: 'Acme Session Info'
+              serializer: 'kryo'
+              springsecuritycompatibility: true
 
 ## Understanding cookiecount and maxcookiesize
 The maximum session size stored by this plugin is calculated by (cookiecount * maxcookiesize). The reason for these two parameters is that through experimentation, some browsers didn't reliably set large cookies set before the subsequent request. To solve this issue, this plugin supports configuring the max size of each cookie stored and the number of cookies to span the session over. The default values are conservative. If sessions exceed the max session size as configured, first increase the cookiecount and then the maxcookiesize parameters.
@@ -210,6 +203,7 @@ To enable large sessions, increase the max http header size for the servlet cont
 
 Due to the potentially large amount of data that may be stored, consider setting it to something large, such as 262144 ( 256kb ).
 
+*the following are for grails 2.x, needs to be updated for 3.x - investigating*
 ### Tomcat
 Edit the server.xml and set the connector's maxHttpHeaderSize parameter. 
 
@@ -233,26 +227,6 @@ Edit the jetty.xml or web.xml and set the connector's requestHeaderSize and resp
           jetty.connectors[0].responseHeaderSize = 262144
         }
 
-## Enabling Webflow Support
-In order for cookie-session-v2 to work with webflows correctly, additional hibernate configuration is needed.
-
-1.  create the hibernate.cfg.xml file: grails create-hibernate-cfg-xml
-2.  edit the grails-app/conf/hibernate/hibernate.cfg.xml file and the hibernate.session_factory_name property under the session-factory element
-
-        <hibernate-configuration>
-          <session-factory>
-            <property name="hibernate.session_factory_name">session_factory</property>
-          </session-factory>
-        </hibernate-configuration>
-
-These configuration changes are needed to support deserializing a webflow conversation container by an
-application instance other than the one that serialized the conversation container. The conversation container contains an object
-that references the hibernate session factory. By default, the hibernate session factory is assigned a name at runtime. 
-This causes deserialization of the conversation container to fail because a session factory with the same name 
-when it was serialized isn't present. This scenario occurs when the conversation container is deserialized 
-by an instance of of the application other than the one where the conversation container originated. The solution is to explicitly 
-name the session factory so that an object with the same name is always available during deserialization.
-
 ## SessionPersistenceListener (versions 2.0.3+)
 SessionPersistenceListener is an interface used inspect the session just after its been deserialized from persistent storage and just before being serialized and persisted. 
 
@@ -266,32 +240,6 @@ The ExceptionCondenser uses beforeSessionSaved() to replace instances of Excepti
 
 ## Configuring Serialization (version 2.0.4+)
 The grails.plugin.cookiesession.serializer config setting is used to pick which serializer the cookie-session plugin will use to serialize sessions. Currently, only two options are supported: 'java' and 'kryo'. 'java' is used to pick the java.io API serializer. This serializer has proven to be reliable and works 'out of the box'. 'kryo' is used to pick the Kryo serializer (http://code.google.com/p/kryo/). The Kryo serializer has many benifits over the Java serializer, primarily serialized results are significantly smaller which reduces the size of the session cookies. However, the Kryo serializer requires configuration to work correctly with some grails and spring objects. By default the kryo serializer is configured to serialize GrailsFlashScope and other basic grails objects. If the application uses spring-security, you must enabled springsecuritycompatibility for the cookie-session plugin. Additionally you should verify that the serializer is successfully serializing all objects that will be stored in the session. Configure info level logging for 'com.granicus.grails.plugins.cookiesession.CookieSessionRepository' for test and development environments to monitor the serialization and deserialization process. If objects fail to serialize, please report an issue to this github project; a best effort will be made to make the kryo serializer as compatible as possible. If the kryo serializer doesn't work for your application, consider falling back to the java serializer or implementing your own SessionSerializer as described below.
-
-(version 2.0.7+)
-
-Cookie-session can also be configured with a custom SessionSerializer. A SessionSerializer is an object that implements the SessionSerializer interface. The SessionSerializer inteface has only two methods: 
-
-        byte[] serialize(SerializableSession session)
-        SerializableSession deserialize(byte[] serializedSession)
-
-These methods are used to convert a SerializableSession into an array of bytes and to convert an array of bytes into a SerializableSession. How your implementation of a SessionSerializer object accomplishes this is of no concern to the cookie-session plugin, just as long as these two methods return valid values. Note: your serialization code doesn't need to be concerned with compression or encryption; these functions are handled by the plugin.
-
-To configure a customer serializer:
-1)  write a class that implements the SessionSerializer interface 
-2)  configure your SessionSerializer as a bean in the grails-app/conf/spring/resources.groovy. For example:
-
-        beans = {
-          mySerializer(MySerializer)
-        }
-
-3)  assign the name of your configured bean to the config parameter 'serializer' in grails-app/conf/Config.groovy. For example:
-
-        grails.plugin.cookiesession.serializer = 'mySerializer'
-
-For examples of how to implement a SessionSerializer, see the implementations of 
-
-* com.granicus.grails.plugins.cookiesession.JavaSessionSerializer 
-* com.granicus.grails.plugins.cookiesession.KryoSessionSerializer.
 
 ## Spring Security Compatibility (version 2.0.7+)
 Spring Security Compatibility, configured with the `springsecuritycompatibility` setting, directs the cookie-session plugin to adjust its behavior to be more compatible with the spring-security-core plugin. 
@@ -322,37 +270,23 @@ Be warned, updating the cookie specification can cause unexpected results and ca
 
 ## Logging
 
-The following log4j keys are configurable:
+The following logback keys are configurable:
 
-  *   com.granicus.grails.plugins.cookiesession.CookieSessionFilter
-  *   com.granicus.grails.plugins.cookiesession.SessionRepositoryRequestWrapper
-  *   com.granicus.grails.plugins.cookiesession.SessionRepositoryResponseWrapper
-  *   com.granicus.grails.plugins.cookiesession.CookieSessionRepository
+  *   grails.plugin.cookiesession.CookieSessionFilter
+  *   grails.plugin.cookiesession.SessionRepositoryRequestWrapper
+  *   grails.plugin.cookiesession.SessionRepositoryResponseWrapper
+  *   grails.plugin.cookiesession.CookieSessionRepository
+  *   grails.plugin.cookiesession.JavaSessionSerializer
+  *   grails.plugin.cookiesession.KryoSessionSerializer
+  *   grails.plugin.cookiesession.KryoSessionSerializer
+  *   grails.plugin.cookiesession.SecurityContextSessionPersistenceListener
+  *   grails.plugin.cookiesession.SerializableSession
 
 ## Configured Beans
 
   *   cookieSessionFilter - the plugin filter
   *   sessionRepository - an implementation of SessionRepository
   *   javaSessionSerializer or kryoSessionSerializer - serializer configured with 'serializer' config setting.
-
-## Relationship to grails-cookie-session plugin version 0.1.2 
-This project started as a fix to the grails-cookie-session plugin (https://github.com/literalice/grails-cookie-session). 
-However, in the end the project became a complete reimplementation. With that said, I would like to give
-special recognition to Masatoshi Hayashi. This project would not have been possible (or at least would have 
-taken much longer!) had it not been for his original work. Many thanks to Masatoshi Hayashi for giving me a place to start! 
-After reviewing this implementation, Masatoshi has agreed to let this version supersede his version and thus, this 
-project has taken over the 'cookie-session' name in grails the plugin repository.
-
-### Why a major version number increment from 0.1.2 to 2.0.0? 
-This is a major functionality upgrade. It was also originally called cookie-session-v2 
-and was intended to stand on its own. But when the decision was made to allow it to supersede the origin implementation, 
-the version was set to 2.0.0 to signify that its the second version of the plugin and upgrades the original version.
-
-### Upgrading from cookie-session version 0.1.2
-This plugin is a drop-in replacement for cookie-session 0.1.2. and will work without as well as the cookie-session 0.1.2.
-However, in order to take advantage of the new features in version 2.0.0, the new configuration settings will need to be used.
-Also, note that some configuration settings have been deprecated and are listed in the configuration settings table below. Please
-remove the deprecated configuration settings from affected applications.
 
 ## How this plugin works
 
