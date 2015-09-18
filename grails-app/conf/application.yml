@@ -2,7 +2,7 @@
 grails:
     profile: web-plugin
     codegen:
-        defaultPackage: cookiesession 
+        defaultPackage: cookie-session 
 info:
     app:
         name: '@info.app.name@'

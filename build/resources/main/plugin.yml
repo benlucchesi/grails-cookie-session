@@ -2,10 +2,10 @@
 grails:
     profile: web-plugin
     codegen:
-        defaultPackage: cookiesession 
+        defaultPackage: cookie-session 
 info:
     app:
-        name: 'cookiesession'
+        name: 'cookie-session'
         version: '3.0.0'
         grailsVersion: '3.0.7'
 spring:
