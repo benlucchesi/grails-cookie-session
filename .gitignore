@@ -1,5 +1,4 @@
 /.settings
-/.gradle/*
 build/**
 .gradle/**
 /cobertura.ser

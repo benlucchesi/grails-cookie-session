@@ -7,7 +7,7 @@ import org.springframework.web.filter.DelegatingFilterProxy
 
 class CookiesessionGrailsPlugin extends Plugin {
 
-    def version = "3.0"
+    //def version = "3.0"
 
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "3.0.0 > *"
