@@ -40,6 +40,7 @@ import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
 import javax.crypto.SealedObject
 import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
 
 //import org.codehaus.groovy.grails.web.servlet.GrailsFlashScope
 import org.grails.web.servlet.GrailsFlashScope
@@ -75,6 +76,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   String serializer = "java"
   Boolean useSessionCookieConfig
   Boolean useInitializationVector
+  Boolean useGCMmode
   def servletContext 
 
   def sessionCookieConfigMethods = [:]
@@ -261,6 +263,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
   
     // determine if an initialization vector is needed
     useInitializationVector = cryptoAlgorithm.indexOf('/') < 0 ? false : cryptoAlgorithm.split('/')[1].toUpperCase() != 'ECB' 
+    useGCMmode =  cryptoAlgorithm.indexOf('/') < 0 ? false : cryptoAlgorithm.split('/')[1].toUpperCase() == 'GCM'
 
 
     // check to see if spring security's sessionfixationprevention is turned on
@@ -415,8 +418,11 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
 
         if( useInitializationVector ){
           int ivLen = input[0]
-          IvParameterSpec ivSpec = new IvParameterSpec( input, 1, ivLen )
-
+          if ( useGCMmode ) {
+            GCMParameterSpec ivSpec = new GCMParameterSpec(128, input[ 1 + ivLen..-1])
+          } else {
+            IvParameterSpec ivSpec = new IvParameterSpec(input, 1, ivLen)
+          }
           cipher.init( Cipher.DECRYPT_MODE, cryptoKey, ivSpec )
           input = cipher.doFinal( input, 1 + ivLen, input.length - 1 - ivLen )
         } else {
