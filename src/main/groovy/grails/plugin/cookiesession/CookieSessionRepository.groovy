@@ -419,11 +419,12 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
         if( useInitializationVector ){
           int ivLen = input[0]
           if ( useGCMmode ) {
-            GCMParameterSpec ivSpec = new GCMParameterSpec(128, input[ 1 + ivLen..-1])
+            GCMParameterSpec ivSpec = new GCMParameterSpec(128, input, 1, ivLen)
+            cipher.init( Cipher.DECRYPT_MODE, cryptoKey, ivSpec )
           } else {
             IvParameterSpec ivSpec = new IvParameterSpec(input, 1, ivLen)
+            cipher.init( Cipher.DECRYPT_MODE, cryptoKey, ivSpec )
           }
-          cipher.init( Cipher.DECRYPT_MODE, cryptoKey, ivSpec )
           input = cipher.doFinal( input, 1 + ivLen, input.length - 1 - ivLen )
         } else {
           cipher.init( Cipher.DECRYPT_MODE, cryptoKey )
