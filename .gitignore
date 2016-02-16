@@ -7,7 +7,7 @@ stacktrace.log
 /target
 /out
 /web-app/WEB-INF/classes
-
+/build
 /*.zip
 /*.zip.sha1
 *.class
