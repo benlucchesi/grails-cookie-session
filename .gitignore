@@ -15,3 +15,5 @@ stacktrace.log
 *.iws
 *.tld
 
+/build
+/.gradle
