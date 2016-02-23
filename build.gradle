@@ -83,7 +83,7 @@ bintray {
   pkg {
 
     repo = 'maven'
-    name = 'grails-cookie-session-plugin'
+    name = 'cookie-session'
     userOrg = ''
     licenses = ['Apache-2.0']
     vcsUrl = 'https://github.com/benlucchesi/grails-cookie-session.git'
@@ -91,7 +91,7 @@ bintray {
     issueTrackerUrl = 'https://github.com/benlucchesi/grails-cookie-session'
     
     version {
-      name = '3.0.0'
+      name = '3.0.1'
       desc = 'grails 3.x compatible release'
       released  = new Date()
     }
