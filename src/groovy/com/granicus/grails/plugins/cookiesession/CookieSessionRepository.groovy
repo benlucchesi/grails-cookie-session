@@ -496,7 +496,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     return data 
   }
 
-  void putDataInCookie(HttpServletResponse response, String value ){
+  void putDataInCookie(HttpServletResponse response, String value ) throws MaxSizeExceededException {
     log.trace "putDataInCookie() - ${value.size()}"
 
     // the cookie's maxAge will either be -1 or the number of seconds it should live for
@@ -505,7 +505,7 @@ class CookieSessionRepository implements SessionRepository, InitializingBean, Ap
     if( value.length() > maxCookieSize * cookieCount )
     {
       log.error "Serialized session exceeds maximum session size that can be stored in cookies. Max size: ${maxCookieSize*cookieCount}, Requested Session Size: ${value.length()}."
-      throw new Exception("Serialized session exceeded max size.") 
+      throw new MaxSizeExceededException("Serialized session exceeded max size.")
     }
 
     def partitions = splitString(value)
